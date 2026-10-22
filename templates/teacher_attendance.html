@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_teacher_title', lang) }}</h1>
+
+<form method="post">
+  <label>{{ t('date', lang) }}</label>
+  <input type="date" name="date" value="{{ att_date }}">
+  <table>
+    <tr>
+      <th>{{ t('name', lang) }}</th>
+      <th>{{ t('att_present', lang) }}</th>
+      <th>{{ t('att_late', lang) }}</th>
+      <th>{{ t('att_absent', lang) }}</th>
+      <th>{{ t('att_time', lang) }}</th>
+    </tr>
+    {% for t in teachers %}
+    {% set cur = existing_map.get(t.id) %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td><input type="radio" name="status_{{ t.id }}" value="present" {{ 'checked' if (not cur or cur.status == 'present') }}></td>
+      <td><input type="radio" name="status_{{ t.id }}" value="late" {{ 'checked' if cur and cur.status == 'late' }}></td>
+      <td><input type="radio" name="status_{{ t.id }}" value="absent" {{ 'checked' if cur and cur.status == 'absent' }}></td>
+      <td><input type="time" name="time_{{ t.id }}" value="{{ cur.time if cur and cur.time else '' }}"></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <button type="submit">{{ t('save', lang) }}</button>
+</form>
+{% endblock %}

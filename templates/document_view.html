@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('documents.documents') }}">&larr; {{ t('doc_back_to_docs', lang) }}</a>
+<h1>{{ doc.title }}</h1>
+<p class="muted">{{ doc.original_name }}</p>
+
+<div class="panel">
+  <form class="inline-form" method="post" action="{{ url_for('documents.document_summarize', did=doc.id) }}">
+    <button type="submit">{{ t('doc_summarize', lang) }}</button>
+  </form>
+  <a class="btn secondary" href="{{ url_for('documents.document_edit', did=doc.id) }}">{{ t('doc_edit', lang) }}</a>
+  <form class="inline-form" method="post" action="{{ url_for('documents.document_move', did=doc.id) }}">
+    <select name="folder_id" style="width:auto; display:inline-block">
+      <option value="">{{ t('doc_uncategorized', lang) }}</option>
+      {% for f in folders %}<option value="{{ f.id }}" {{ 'selected' if doc.folder_id == f.id }}>{{ f.name }}</option>{% endfor %}
+    </select>
+    <button class="secondary" type="submit">{{ t('doc_move', lang) }}</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>{{ t('doc_preview', lang) }}</h2>
+  {% set mime = doc.mime_type or '' %}
+  {% if mime.startswith('image/') %}
+    <img class="preview-img" src="{{ url_for('documents.document_file', did=doc.id) }}" alt="{{ doc.title }}">
+  {% elif mime == 'application/pdf' %}
+    <iframe class="preview-frame" src="{{ url_for('documents.document_file', did=doc.id) }}"></iframe>
+  {% else %}
+    <a class="btn" href="{{ url_for('documents.document_file', did=doc.id) }}" target="_blank">{{ t('doc_open', lang) }}</a>
+    <a class="btn secondary" href="{{ url_for('documents.document_file', did=doc.id) }}" download>{{ t('doc_download', lang) }}</a>
+  {% endif %}
+</div>
+
+{% if doc.summary %}
+<div class="panel">
+  <h2>{{ t('doc_summary', lang) }}</h2>
+  <div class="pre">{{ doc.summary }}</div>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>{{ t('doc_signatures', lang) }}</h2>
+  {% if sigs %}
+  <div class="grid2">
+    {% for s in sigs %}
+    <div>
+      <img class="signature-thumb" src="{{ url_for('documents.signature_file', fname=s.signature_file) }}" alt="{{ s.signer_name }}">
+      <div class="muted">{{ t('doc_signed_by', lang) }} {{ s.signer_name }}{% if s.signer_email %} &lt;{{ s.signer_email }}&gt;{% endif %} {{ t('doc_signed_on', lang) }} {{ s.created_at }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">{{ t('no_results', lang) }}</p>
+  {% endif %}
+
+  <h3>{{ t('doc_sign_here', lang) }}</h3>
+  <form id="signForm" method="post" action="{{ url_for('documents.document_sign', did=doc.id) }}">
+    <input type="hidden" name="signature" id="signatureInput">
+    <label>{{ t('doc_signer_name', lang) }}</label>
+    <input name="signer_name" value="{{ session.get('name') }}">
+    <label>{{ t('doc_signer_email', lang) }}</label>
+    <input name="signer_email" type="email">
+    <canvas id="sigCanvas" class="signature-canvas" width="640" height="200"></canvas>
+    <button class="secondary" type="button" id="sigClear">{{ t('doc_clear', lang) }}</button>
+    <button type="submit">{{ t('doc_sign', lang) }}</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>{{ t('doc_request_sign', lang) }}</h2>
+  <form method="post" action="{{ url_for('documents.request_signature', did=doc.id) }}">
+    <div class="form-row">
+      <div>
+        <label>{{ t('doc_signer_name', lang) }}</label>
+        <input name="signer_name">
+      </div>
+      <div>
+        <label>{{ t('doc_signer_email', lang) }}</label>
+        <input name="signer_email" type="email">
+      </div>
+    </div>
+    <button type="submit">{{ t('doc_request_sign', lang) }}</button>
+  </form>
+
+  {% if links %}
+  <h3>{{ t('doc_link', lang) }}</h3>
+  <ul>
+    {% for r, link in links %}
+    <li>
+      <span class="muted">{{ r.signer_name or r.signer_email or '' }} &middot; {{ t('doc_signed', lang) if r.status == 'signed' else t('doc_pending', lang) }}</span>
+      <br><a href="{{ link }}" target="_blank">{{ link }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='signature.js') }}"></script>
+<script>setupSignaturePad('sigCanvas', 'sigClear', 'signatureInput', 'signForm');</script>
+{% endblock %}
+{% endblock %}

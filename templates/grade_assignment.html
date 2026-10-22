@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('views.grading') }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ assignment.title }}</h1>
+<p class="muted">{{ assignment.class_name }} &middot; {{ t('gr_total_marks', lang) }}: {{ assignment.total_marks }}</p>
+{% if assignment.description %}<p>{{ assignment.description }}</p>{% endif %}
+
+<form method="post">
+  <table>
+    <tr>
+      <th>{{ t('student', lang) }}</th>
+      <th>{{ t('marks', lang) }} (0-{{ assignment.total_marks }})</th>
+      <th>{{ t('gr_feedback', lang) }}</th>
+    </tr>
+    {% for s in students %}
+    {% set sub = sub_map.get(s.id) %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td><input type="number" name="marks_{{ s.id }}" step="0.5" min="0" max="{{ assignment.total_marks }}"
+                 value="{{ sub.marks if sub and sub.marks is not none else '' }}"></td>
+      <td><textarea name="feedback_{{ s.id }}" placeholder="{% if lang == 'ms' %}Kosongkan untuk auto-jana maklum balas{% else %}Leave blank to auto-generate feedback{% endif %}">{{ sub.feedback if sub and sub.feedback else '' }}</textarea></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <button type="submit">{{ t('save', lang) }}</button>
+</form>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ brand_name }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if session.get('user_id') %}
+<nav class="navbar">
+  <div class="brand"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</div>
+  <div class="nav-links">
+    <a href="{{ url_for('views.dashboard') }}" class="{{ 'active' if request.endpoint == 'views.dashboard' }}">{{ t('dashboard', lang) }}</a>
+    <a href="{{ url_for('views.lesson_plans') }}">{{ t('nav_lesson_plans', lang) }}</a>
+    <a href="{{ url_for('views.quizzes') }}">{{ t('nav_quizzes', lang) }}</a>
+    <a href="{{ url_for('views.grading') }}">{{ t('nav_grading', lang) }}</a>
+    <a href="{{ url_for('views.attendance') }}">{{ t('nav_attendance', lang) }}</a>
+    <a href="{{ url_for('views.teacher_attendance') }}">{{ t('nav_teacher_attendance', lang) }}</a>
+    <a href="{{ url_for('views.timetable') }}">{{ t('nav_timetable', lang) }}</a>
+    <a href="{{ url_for('views.reports') }}">{{ t('nav_reports', lang) }}</a>
+    <a href="{{ url_for('views.parents') }}">{{ t('nav_parents', lang) }}</a>
+    <a href="{{ url_for('views.classes') }}">{{ t('nav_classes', lang) }}</a>
+    <a href="{{ url_for('documents.documents') }}">{{ t('nav_documents', lang) }}</a>
+    {% if session.get('role') == 'admin' %}
+    <a href="{{ url_for('views.settings') }}">{{ t('nav_settings', lang) }}</a>
+    {% endif %}
+  </div>
+  <div class="nav-right">
+    <span class="user">{{ session.get('name') }}</span>
+    <a class="lang-opt {{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
+    <a class="lang-opt {{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
+    <a class="lang-opt {{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
+    <a class="logout" href="{{ url_for('auth.logout') }}">{{ t('logout', lang) }}</a>
+  </div>
+</nav>
+{% endif %}
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ t(msg, lang) }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

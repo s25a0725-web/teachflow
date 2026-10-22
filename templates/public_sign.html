@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('doc_sign_title', lang) }}</h1>
+<p class="muted">{{ doc.title }}</p>
+
+{% if signed %}
+<div class="flash flash-success">{{ t('doc_thanks', lang) }}</div>
+{% else %}
+<div class="panel">
+  <h2>{{ t('doc_preview', lang) }}</h2>
+  {% set mime = doc.mime_type or '' %}
+  {% if mime.startswith('image/') %}
+    <img class="preview-img" src="{{ url_for('documents.public_sign_file', token=token) }}" alt="{{ doc.title }}">
+  {% elif mime == 'application/pdf' %}
+    <iframe class="preview-frame" src="{{ url_for('documents.public_sign_file', token=token) }}"></iframe>
+  {% else %}
+    <a class="btn" href="{{ url_for('documents.public_sign_file', token=token) }}" target="_blank">{{ t('doc_open', lang) }}</a>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <form id="signForm" method="post">
+    <input type="hidden" name="signature" id="signatureInput">
+    <label>{{ t('doc_public_name', lang) }}</label>
+    <input name="signer_name" value="{{ req.signer_name or '' }}" required>
+    <canvas id="sigCanvas" class="signature-canvas" width="640" height="200"></canvas>
+    <button class="secondary" type="button" id="sigClear">{{ t('doc_clear', lang) }}</button>
+    <button type="submit">{{ t('doc_sign', lang) }}</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='signature.js') }}"></script>
+<script>setupSignaturePad('sigCanvas', 'sigClear', 'signatureInput', 'signForm');</script>
+{% endblock %}

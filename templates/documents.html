@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('doc_title', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('doc_upload', lang) }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    <div class="form-row">
+      <div>
+        <label>{{ t('doc_title_field', lang) }}</label>
+        <input name="title" placeholder="Optional">
+      </div>
+      <div>
+        <label>{{ t('doc_folder', lang) }}</label>
+        <select name="folder_id">
+          <option value="">{{ t('doc_uncategorized', lang) }}</option>
+          {% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('doc_file', lang) }}</label>
+        <input type="file" name="file" required>
+      </div>
+    </div>
+    <button type="submit">{{ t('doc_upload', lang) }}</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>{{ t('doc_new_folder', lang) }}</h2>
+  <form method="post" action="{{ url_for('documents.folder_new') }}">
+    <div class="form-row">
+      <div><input name="name" placeholder="{{ t('doc_folder_name', lang) }}" required></div>
+      <div><button type="submit">{{ t('save', lang) }}</button></div>
+    </div>
+  </form>
+  <div class="mt">
+    <a class="folder-chip {{ '' if not folder_filter else '' }}" href="{{ url_for('documents.documents') }}">{{ t('doc_all', lang) }}</a>
+    {% for f in folders %}
+    <a class="folder-chip" href="{{ url_for('documents.documents', folder=f.id) }}">{{ f.name }} ({{ f.n }})</a>
+    <form class="inline-form" method="post" action="{{ url_for('documents.folder_delete', fid=f.id) }}">
+      <button class="danger small" type="submit" title="{{ t('delete', lang) }}">&times;</button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+<h2>{{ t('doc_list', lang) }}</h2>
+{% if docs %}
+<div class="panel">
+  {% for d in docs %}
+  <div class="doc-row">
+    <div>
+      <div class="doc-name">{{ d.title }}</div>
+      <div class="doc-meta">{{ d.original_name }} &middot; {{ t('doc_signatures', lang) }}: {{ d.n_sig }}{% if d.folder_name %} &middot; {{ d.folder_name }}{% endif %}</div>
+    </div>
+    <div>
+      <a class="btn secondary small" href="{{ url_for('documents.document_view', did=d.id) }}">{{ t('doc_open', lang) }}</a>
+      <a class="btn secondary small" href="{{ url_for('documents.document_file', did=d.id) }}" download>{{ t('doc_download', lang) }}</a>
+      <form class="inline-form" method="post" action="{{ url_for('documents.document_delete', did=d.id) }}"
+            onsubmit="return confirm('{{ 'Delete this document?' if lang == 'en' else ('Padam dokumen ini?' if lang == 'ms' else 'இந்த ஆவணத்தை நீக்கவா?') }}');">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">{{ t('doc_no_docs', lang) }}</p>
+{% endif %}
+{% endblock %}

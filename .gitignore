@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Database (local data, don't commit)
+teachflow.db
+*.db
+*.sqlite3
+
+# Uploaded files (local data, don't commit)
+uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

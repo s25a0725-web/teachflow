@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('settings_title', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('settings_branding', lang) }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="branding">
+    <label>{{ t('settings_school_name', lang) }}</label>
+    <input name="school_name" value="{{ school_name }}" placeholder="SJK(T) Sepang">
+    <label>{{ t('settings_tagline', lang) }}</label>
+    <input name="tagline" value="{{ tagline }}">
+    <label>{{ t('settings_logo', lang) }}</label>
+    <input type="file" name="logo" accept="image/*,.svg">
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+  <form method="post" class="mt">
+    <input type="hidden" name="action" value="remove_logo">
+    <button class="secondary" type="submit">{{ t('settings_remove_logo', lang) }}</button>
+  </form>
+  <div class="mt">
+    <img src="{{ url_for('views.branding_logo') }}" class="logo" style="height:64px" alt="{{ brand_name }}">
+    <span class="muted">{{ brand_name }}</span>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>{{ t('settings_users', lang) }}</h2>
+  <p class="muted">{{ t('settings_users_hint', lang) }}</p>
+  <table>
+    <tr><th>{{ t('name', lang) }}</th><th>{{ t('email', lang) }}</th><th>{{ t('role', lang) }}</th><th>{{ t('actions', lang) }}</th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.name }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ t(u.role, lang) }}</td>
+      <td>
+        {% if u.id != session.get('user_id') %}
+        <form class="inline-form" method="post">
+          <input type="hidden" name="action" value="user_role">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <select name="role" style="width:auto; display:inline-block">
+            <option value="teacher" {{ 'selected' if u.role == 'teacher' }}>{{ t('teacher', lang) }}</option>
+            <option value="admin" {{ 'selected' if u.role == 'admin' }}>{{ t('admin', lang) }}</option>
+          </select>
+          <button class="small" type="submit">{{ t('save', lang) }}</button>
+        </form>
+        <form class="inline-form" method="post" action="{{ url_for('views.delete_user', uid2=u.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+          <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+        </form>
+        {% else %}
+        <span class="muted">(you)</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

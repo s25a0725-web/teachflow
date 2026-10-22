@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('welcome', lang) }}, {{ session.get('name') }}</h1>
+<p class="muted">{{ brand_tagline }}</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">{{ n_classes }}</div><div class="label">{{ t('stat_classes', lang) }}</div></div>
+  <div class="stat"><div class="num">{{ n_students }}</div><div class="label">{{ t('stat_students', lang) }}</div></div>
+  <div class="stat"><div class="num">{{ n_assignments }}</div><div class="label">{{ t('stat_assignments', lang) }}</div></div>
+  <div class="stat"><div class="num">{{ n_att }}</div><div class="label">{{ t('stat_attendance_today', lang) }}</div></div>
+</div>
+
+<h2>{{ t('quick_actions', lang) }}</h2>
+<div class="cards">
+  <a class="card" href="{{ url_for('views.lesson_plans') }}"><strong>{{ t('nav_lesson_plans', lang) }}</strong><span>Auto-generate a structured plan from a topic.</span></a>
+  <a class="card" href="{{ url_for('views.quizzes') }}"><strong>{{ t('nav_quizzes', lang) }}</strong><span>Generate questions and answers instantly.</span></a>
+  <a class="card" href="{{ url_for('views.grading') }}"><strong>{{ t('nav_grading', lang) }}</strong><span>Mark assignments and auto-suggest feedback.</span></a>
+  <a class="card" href="{{ url_for('views.attendance') }}"><strong>{{ t('nav_attendance', lang) }}</strong><span>Mark attendance in one click per class.</span></a>
+  <a class="card" href="{{ url_for('views.timetable') }}"><strong>{{ t('nav_timetable', lang) }}</strong><span>Keep your weekly schedule.</span></a>
+  <a class="card" href="{{ url_for('views.reports') }}"><strong>{{ t('nav_reports', lang) }}</strong><span>Generate student progress reports.</span></a>
+  <a class="card" href="{{ url_for('views.parents') }}"><strong>{{ t('nav_parents', lang) }}</strong><span>Write parent messages from reports.</span></a>
+  <a class="card" href="{{ url_for('documents.documents') }}"><strong>{{ t('nav_documents', lang) }}</strong><span>Upload, summarize, edit and e-sign documents.</span></a>
+</div>
+{% endblock %}

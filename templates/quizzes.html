@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('qz_new', lang) }}</h1>
+<div class="panel">
+  <form method="post">
+    <div class="form-row">
+      <div>
+        <label>{{ t('topic', lang) }}</label>
+        <input name="topic" placeholder="{{ t('lp_topic_ph', lang) }}" required>
+      </div>
+      <div>
+        <label>{{ t('subject', lang) }}</label>
+        <input name="subject" placeholder="e.g. Mathematics / Sains">
+      </div>
+      <div>
+        <label>{{ t('grade', lang) }}</label>
+        <input name="grade" placeholder="e.g. Form 1">
+      </div>
+      <div>
+        <label>{{ t('qz_count', lang) }}</label>
+        <input name="num" type="number" value="5" min="1" max="30">
+      </div>
+      <div>
+        <label>{{ t('qz_difficulty', lang) }}</label>
+        <select name="difficulty">
+          <option value="easy">{{ t('qz_easy', lang) }}</option>
+          <option value="medium" selected>{{ t('qz_medium', lang) }}</option>
+          <option value="hard">{{ t('qz_hard', lang) }}</option>
+        </select>
+      </div>
+      <div>
+        <label>{{ t('qz_type', lang) }}</label>
+        <select name="qz_type">
+          <option value="mixed" selected>{{ t('qz_mixed', lang) }}</option>
+          <option value="objective">{{ t('qz_objective', lang) }}</option>
+          <option value="subjective">{{ t('qz_subjective', lang) }}</option>
+        </select>
+      </div>
+      <div>
+        <label>{{ t('language', lang) }}</label>
+        <select name="qz_lang">
+          <option value="en" {{ 'selected' if lang == 'en' }}>{{ t('english', lang) }}</option>
+          <option value="ms" {{ 'selected' if lang == 'ms' }}>{{ t('malay', lang) }}</option>
+          <option value="ta" {{ 'selected' if lang == 'ta' }}>{{ t('tamil', lang) }}</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit">{{ t('generate', lang) }}</button>
+  </form>
+</div>
+
+{% if questions %}
+<div class="panel">
+  <h2>{{ t('qz_questions', lang) }}</h2>
+  {% set obj_items = questions | selectattr('type', 'equalto', 'obj') | list %}
+  {% set sub_items = questions | selectattr('type', 'equalto', 'sub') | list %}
+  {% if obj_items %}
+  <h3 class="qz-section">{{ t('qz_section_obj', lang) }}</h3>
+  <ol>
+    {% for item in obj_items %}
+    <li style="margin-bottom:0.9rem">
+      {{ item.q }}
+      <div class="opts">
+        {% for o in item.options %}
+        <div>{{ 'ABCD'[loop.index0] }}) {{ o }}</div>
+        {% endfor %}
+      </div>
+      <div class="muted">{{ t('qz_answer', lang) }}: {{ item.a }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if sub_items %}
+  <h3 class="qz-section">{{ t('qz_section_sub', lang) }}</h3>
+  <ol>
+    {% for item in sub_items %}
+    <li style="margin-bottom:0.9rem">
+      {{ item.q }}
+      <div class="muted">{{ t('qz_model_answer', lang) }}: {{ item.a }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
+  <h3 class="qz-section">{{ t('qz_answer_key', lang) }}</h3>
+  <ol>
+    {% for item in questions %}
+    <li><strong>{{ item.a }}</strong> <span class="muted">({{ item.q | truncate(70) }})</span></li>
+    {% endfor %}
+  </ol>
+  <button class="secondary no-print" type="button" onclick="window.print()">{{ t('qz_print', lang) }}</button>
+</div>
+{% endif %}
+
+<h2>{{ t('qz_saved', lang) }}</h2>
+{% if saved %}
+<table>
+  <tr><th>{{ t('title', lang) }}</th><th>{{ t('subject', lang) }}</th><th></th></tr>
+  {% for q in saved %}
+  <tr>
+    <td>{{ q.title }}</td>
+    <td>{{ q.subject or '' }}</td>
+    <td>
+      <a class="btn secondary small" href="{{ url_for('views.view_quiz', qid=q.id) }}">{{ t('doc_open', lang) }}</a>
+      <form class="inline-form" method="post" action="{{ url_for('views.delete_quiz', qid=q.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

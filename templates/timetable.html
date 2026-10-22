@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('tt_title', lang) }}</h1>
+
+<div class="panel">
+  <form method="post">
+    <div class="form-row">
+      <div>
+        <label>{{ t('tt_day', lang) }}</label>
+        <select name="day">
+          {% for d in day_names(lang) %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('tt_period', lang) }}</label>
+        <input name="period" type="number" min="1" max="12" value="1">
+      </div>
+      <div>
+        <label>{{ t('subject', lang) }}</label>
+        <input name="subject" required>
+      </div>
+      <div>
+        <label>{{ t('tt_class', lang) }}</label>
+        <input name="class_name">
+      </div>
+      <div>
+        <button type="submit">{{ t('tt_add', lang) }}</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if entries %}
+<table>
+  <tr><th>{{ t('tt_day', lang) }}</th><th>{{ t('tt_period', lang) }}</th><th>{{ t('subject', lang) }}</th><th>{{ t('tt_class', lang) }}</th><th></th></tr>
+  {% for e in entries %}
+  <tr>
+    <td>{{ day_names(lang)[e.day] }}</td>
+    <td>{{ e.period }}</td>
+    <td>{{ e.subject }}</td>
+    <td>{{ e.class_name or '' }}</td>
+    <td>
+      <form class="inline-form" method="post" action="{{ url_for('views.timetable_delete', tid=e.id) }}">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

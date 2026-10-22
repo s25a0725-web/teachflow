@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('nav_attendance', lang) }}</h1>
+
+<form method="get" class="mt">
+  <label>{{ t('class', lang) }}</label>
+  <select name="class_id" onchange="this.form.submit()">
+    <option value="">--</option>
+    {% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if selected == c.id }}>{{ c.name }}</option>{% endfor %}
+  </select>
+</form>
+
+{% if selected %}
+<form method="post">
+  <input type="hidden" name="class_id" value="{{ selected }}">
+  <label>{{ t('date', lang) }}</label>
+  <input type="date" name="date" value="{{ att_date }}">
+  <table>
+    <tr>
+      <th>{{ t('student', lang) }}</th>
+      <th>{{ t('att_present', lang) }}</th>
+      <th>{{ t('att_late', lang) }}</th>
+      <th>{{ t('att_absent', lang) }}</th>
+      <th>{{ t('att_time', lang) }}</th>
+    </tr>
+    {% for s in students %}
+    {% set cur = existing_map.get(s.id) %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td><input type="radio" name="status_{{ s.id }}" value="present" {{ 'checked' if (not cur or cur.status == 'present') }}></td>
+      <td><input type="radio" name="status_{{ s.id }}" value="late" {{ 'checked' if cur and cur.status == 'late' }}></td>
+      <td><input type="radio" name="status_{{ s.id }}" value="absent" {{ 'checked' if cur and cur.status == 'absent' }}></td>
+      <td><input type="time" name="time_{{ s.id }}" value="{{ cur.time if cur and cur.time else '' }}"></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <button type="submit">{{ t('save', lang) }}</button>
+</form>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

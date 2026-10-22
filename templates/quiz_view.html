@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('views.quizzes') }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ qz.title }}</h1>
+<p class="muted">{{ t('subject', lang) }}: {{ qz.subject or '' }}</p>
+<div class="panel">
+  {% set obj_items = questions | selectattr('type', 'equalto', 'obj') | list %}
+  {% set sub_items = questions | selectattr('type', 'equalto', 'sub') | list %}
+  {% if obj_items %}
+  <h3 class="qz-section">{{ t('qz_section_obj', lang) }}</h3>
+  <ol>
+    {% for item in obj_items %}
+    <li style="margin-bottom:0.9rem">
+      {{ item.q }}
+      <div class="opts">
+        {% for o in item.options %}
+        <div>{{ 'ABCD'[loop.index0] }}) {{ o }}</div>
+        {% endfor %}
+      </div>
+      <div class="muted">{{ t('qz_answer', lang) }}: {{ item.a }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if sub_items %}
+  <h3 class="qz-section">{{ t('qz_section_sub', lang) }}</h3>
+  <ol>
+    {% for item in sub_items %}
+    <li style="margin-bottom:0.9rem">
+      {{ item.q }}
+      <div class="muted">{{ t('qz_model_answer', lang) }}: {{ item.a }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
+  <h3 class="qz-section">{{ t('qz_answer_key', lang) }}</h3>
+  <ol>
+    {% for item in questions %}
+    <li><strong>{{ item.a }}</strong> <span class="muted">({{ item.q | truncate(70) }})</span></li>
+    {% endfor %}
+  </ol>
+  <button class="secondary no-print" type="button" onclick="window.print()">{{ t('qz_print', lang) }}</button>
+</div>
+{% endblock %}

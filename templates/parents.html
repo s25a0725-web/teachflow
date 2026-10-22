@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('pt_title', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('pt_generate', lang) }}</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="generate">
+    <label>{{ t('rp_select_student', lang) }}</label>
+    <select name="student_id">
+      <option value="">--</option>
+      {% for s in students %}<option value="{{ s.id }}" {{ 'selected' if selected|string == s.id|string }}>{{ s.name }} ({{ s.class_name }})</option>{% endfor %}
+    </select>
+    <button type="submit">{{ t('generate', lang) }}</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>{{ t('pt_body', lang) }}</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="save">
+    <input type="hidden" name="student_id" value="{{ selected or '' }}">
+    <label>{{ t('subject', lang) }}</label>
+    <input name="subject">
+    <label>{{ t('pt_body', lang) }}</label>
+    <textarea name="body" rows="6">{{ body }}</textarea>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<h2>{{ t('pt_title', lang) }} &mdash; {{ t('no_results', lang) }}</h2>
+{% if sent %}
+<table>
+  <tr><th>{{ t('date', lang) }}</th><th>{{ t('subject', lang) }}</th><th>{{ t('pt_parent_email', lang) }}</th><th>{{ t('pt_body', lang) }}</th><th></th></tr>
+  {% for m in sent %}
+  <tr>
+    <td>{{ m.created_at }}</td>
+    <td>{{ m.subject or '' }}</td>
+    <td>{{ m.parent_email or '' }}</td>
+    <td style="max-width:320px; word-break:break-word">{{ m.body }}</td>
+    <td>
+      <form class="inline-form" method="post" action="{{ url_for('views.delete_message', mid=m.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

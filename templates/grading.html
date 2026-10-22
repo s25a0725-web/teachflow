@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('gr_assignments', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('gr_new', lang) }}</h2>
+  <form method="post" action="{{ url_for('views.new_assignment') }}">
+    <div class="form-row">
+      <div>
+        <label>{{ t('title', lang) }}</label>
+        <input name="title" required>
+      </div>
+      <div>
+        <label>{{ t('class', lang) }}</label>
+        <select name="class_id">
+          {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('gr_total_marks', lang) }}</label>
+        <input name="total_marks" type="number" value="100" min="1">
+      </div>
+    </div>
+    <label>{{ t('gr_description', lang) }}</label>
+    <input name="description">
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<h2>{{ t('gr_assignments', lang) }}</h2>
+{% if assignments %}
+<table>
+  <tr><th>{{ t('title', lang) }}</th><th>{{ t('class', lang) }}</th><th>{{ t('gr_submissions', lang) }}</th><th></th></tr>
+  {% for a in assignments %}
+  <tr>
+    <td>{{ a.title }}</td>
+    <td>{{ a.class_name }}</td>
+    <td>{{ a.n_sub }}</td>
+    <td>
+      <a class="btn secondary small" href="{{ url_for('views.grade_assignment', aid=a.id) }}">{{ t('gr_submissions', lang) }}</a>
+      <form class="inline-form" method="post" action="{{ url_for('views.delete_assignment', aid=a.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

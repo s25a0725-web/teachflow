@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('rp_title', lang) }}</h1>
+
+<form method="get" class="mt">
+  <label>{{ t('rp_select_student', lang) }}</label>
+  <select name="student_id" onchange="this.form.submit()">
+    <option value="">--</option>
+    {% for s in students %}<option value="{{ s.id }}" {{ 'selected' if selected|string == s.id|string }}>{{ s.name }} ({{ s.class_name }})</option>{% endfor %}
+  </select>
+</form>
+
+{% if report %}
+<div class="panel">
+  <h2>{{ report.student.name }}</h2>
+  <p class="muted">{{ t('class', lang) }}: {{ report.student.class_name }}</p>
+  <div class="stats">
+    <div class="stat"><div class="num">{{ report.avg if report.avg is not none else '&mdash;' }}</div><div class="label">{{ t('rp_average', lang) }}</div></div>
+    <div class="stat"><div class="num">{{ (report.att_rate ~ '%') if report.att_rate is not none else '&mdash;' }}</div><div class="label">{{ t('att_rate', lang) }}</div></div>
+  </div>
+
+  <h3>{{ t('rp_grades', lang) }}</h3>
+  {% if report.grades %}
+  <table>
+    <tr><th>{{ t('title', lang) }}</th><th>{{ t('marks', lang) }}</th><th>{{ t('gr_feedback', lang) }}</th></tr>
+    {% for g in report.grades %}
+    <tr><td>{{ g.title }}</td><td>{{ g.marks }}/{{ g.total_marks }}</td><td>{{ g.feedback or '' }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">{{ t('no_results', lang) }}</p>
+  {% endif %}
+
+  <h3>{{ t('rp_comment', lang) }}</h3>
+  <p>{{ report.comment }}</p>
+</div>
+{% endif %}
+{% endblock %}

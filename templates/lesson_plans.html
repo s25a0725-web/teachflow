@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('lp_new', lang) }}</h1>
+<div class="panel">
+  <form method="post">
+    <div class="form-row">
+      <div>
+        <label>{{ t('topic', lang) }}</label>
+        <input name="topic" placeholder="{{ t('lp_topic_ph', lang) }}" required>
+      </div>
+      <div>
+        <label>{{ t('subject', lang) }}</label>
+        <input name="subject" placeholder="e.g. Science / Sains">
+      </div>
+      <div>
+        <label>{{ t('grade', lang) }}</label>
+        <input name="grade" placeholder="e.g. Form 2 / Tingkatan 2">
+      </div>
+      <div>
+        <label>{{ t('lp_duration', lang) }}</label>
+        <input name="duration" type="number" value="60" min="20" max="180">
+      </div>
+      <div>
+        <label>{{ t('language', lang) }}</label>
+        <select name="lp_lang">
+          <option value="en" {{ 'selected' if lang == 'en' }}>{{ t('english', lang) }}</option>
+          <option value="ms" {{ 'selected' if lang == 'ms' }}>{{ t('malay', lang) }}</option>
+          <option value="ta" {{ 'selected' if lang == 'ta' }}>{{ t('tamil', lang) }}</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit">{{ t('generate', lang) }}</button>
+  </form>
+</div>
+
+{% if content %}
+<div class="panel">
+  <h2>{{ t('lp_generated', lang) }}</h2>
+  <div class="pre">{{ content }}</div>
+</div>
+{% endif %}
+
+<h2>{{ t('lp_saved', lang) }}</h2>
+{% if saved %}
+<table>
+  <tr><th>{{ t('title', lang) }}</th><th>{{ t('subject', lang) }}</th><th>{{ t('grade', lang) }}</th><th></th></tr>
+  {% for p in saved %}
+  <tr>
+    <td>{{ p.title }}</td>
+    <td>{{ p.subject or '' }}</td>
+    <td>{{ p.grade or '' }}</td>
+    <td>
+      <a class="btn secondary small" href="{{ url_for('views.view_plan', pid=p.id) }}">{{ t('doc_open', lang) }}</a>
+      <form class="inline-form" method="post" action="{{ url_for('views.delete_plan', pid=p.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+        <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

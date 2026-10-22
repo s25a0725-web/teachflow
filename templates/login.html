@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel auth-card">
+  <div class="auth-logo"><img src="{{ url_for('views.branding_logo') }}" alt="{{ brand_name }}"></div>
+  <h1>{{ t('login_title', lang) }}</h1>
+  <form method="post">
+    <label>{{ t('email', lang) }}</label>
+    <input type="email" name="email" required autofocus>
+    <label>{{ t('password', lang) }}</label>
+    <input type="password" name="password" required>
+    <button type="submit">{{ t('login', lang) }}</button>
+  </form>
+  <p><a href="{{ url_for('auth.register') }}">{{ t('no_account', lang) }}</a></p>
+</div>
+{% endblock %}

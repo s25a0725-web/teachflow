@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('nav_classes', lang) }}</h1>
+<div class="grid2">
+  <div>
+    <div class="panel">
+      <h2>{{ t('cs_new_class', lang) }}</h2>
+      <form method="post">
+        <input type="hidden" name="action" value="add_class">
+        <label>{{ t('cs_class_name', lang) }}</label>
+        <input name="name" required>
+        <label>{{ t('subject', lang) }}</label>
+        <input name="subject">
+        <label>{{ t('grade', lang) }}</label>
+        <input name="grade">
+        <button type="submit">{{ t('save', lang) }}</button>
+      </form>
+    </div>
+    <h2>{{ t('classes', lang) }}</h2>
+    <table>
+      <tr><th>{{ t('name', lang) }}</th><th>{{ t('subject', lang) }}</th><th>{{ t('grade', lang) }}</th><th>{{ t('students', lang) }}</th><th></th></tr>
+      {% for c in classes %}
+      <tr>
+        <td>{{ c.name }}</td><td>{{ c.subject or '' }}</td><td>{{ c.grade or '' }}</td><td>{{ student_counts.get(c.id, 0) }}</td>
+        <td>
+          <form class="inline-form" method="post" action="{{ url_for('views.delete_class', cid=c.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+            <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>{{ t('cs_add_student', lang) }}</h2>
+      <form method="post">
+        <input type="hidden" name="action" value="add_student">
+        <label>{{ t('class', lang) }}</label>
+        <select name="class_id">
+          {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+        <label>{{ t('name', lang) }}</label>
+        <input name="name" required>
+        <label>{{ t('pt_parent_name', lang) }}</label>
+        <input name="parent_name">
+        <label>{{ t('pt_parent_email', lang) }}</label>
+        <input name="parent_email">
+        <button type="submit">{{ t('save', lang) }}</button>
+      </form>
+    </div>
+    <h2>{{ t('students', lang) }}</h2>
+    <table>
+      <tr><th>{{ t('name', lang) }}</th><th>{{ t('class', lang) }}</th><th>{{ t('pt_parent_email', lang) }}</th><th></th></tr>
+      {% for s in students %}
+      <tr>
+        <td>{{ s.name }}</td><td>{{ s.class_name }}</td><td>{{ s.parent_email or '' }}</td>
+        <td>
+          <form class="inline-form" method="post" action="{{ url_for('views.delete_student', sid=s.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+            <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
