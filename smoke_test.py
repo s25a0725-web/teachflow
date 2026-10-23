@@ -44,14 +44,6 @@ check("lesson-plan-ms", c.post("/lesson-plans", data={
     "topic": "Fotosintesis", "subject": "Sains", "grade": "Tingkatan 2",
     "duration": "60", "lp_lang": "ms"}, follow_redirects=True))
 
-# Quiz
-check("quiz", c.post("/quizzes", data={
-    "topic": "Algebra", "subject": "Mathematics", "grade": "Form 1",
-    "num": "5", "difficulty": "easy", "qz_lang": "en"}, follow_redirects=True))
-check("quiz-ms", c.post("/quizzes", data={
-    "topic": "Fotosintesis", "subject": "Sains", "grade": "Tingkatan 1",
-    "num": "3", "difficulty": "medium", "qz_lang": "ms"}, follow_redirects=True))
-
 # Classes + students
 check("add-class", c.post("/classes", data={
     "action": "add_class", "name": "2 Mawar", "subject": "Science", "grade": "Form 2"}, follow_redirects=True))

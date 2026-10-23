@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="muted">{{ cards|length }} cards · click a card to flip</p>
+<div class="cards-grid">
+  {% for c in cards %}
+  <div class="flashcard" onclick="this.classList.toggle('flipped')">
+    <div class="fc-inner">
+      <div class="fc-face fc-front">{{ c.front }}</div>
+      <div class="fc-face fc-back">{{ c.back }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

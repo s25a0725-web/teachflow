@@ -10,6 +10,8 @@
     <input type="password" name="password" required>
     <button type="submit">{{ t('login', lang) }}</button>
   </form>
+  <p><a href="{{ url_for('auth.forgot_password') }}">{{ t('forgot_password', lang) }}</a></p>
   <p><a href="{{ url_for('auth.register') }}">{{ t('no_account', lang) }}</a></p>
+  <p><a href="{{ url_for('auth.parent_login') }}">{{ t('parent_login_link', lang) }}</a></p>
 </div>
 {% endblock %}

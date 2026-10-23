@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfdbfe"/><stop offset="1" stop-color="#e0f2fe"/>
+    </linearGradient>
+    <linearGradient id="bldg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dc2626"/><stop offset="1" stop-color="#991b1b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <circle cx="1000" cy="120" r="62" fill="#fde047"/>
+  <g fill="#ffffff" opacity="0.92">
+    <ellipse cx="200" cy="140" rx="72" ry="30"/>
+    <ellipse cx="265" cy="118" rx="52" ry="26"/>
+    <ellipse cx="720" cy="90" rx="82" ry="32"/>
+    <ellipse cx="480" cy="70" rx="60" ry="24"/>
+  </g>
+  <rect y="620" width="1200" height="180" fill="#86efac"/>
+  <rect y="620" width="1200" height="18" fill="#4ade80"/>
+  <rect x="380" y="300" width="440" height="320" fill="url(#bldg)" stroke="#cbd5e1" stroke-width="3"/>
+  <polygon points="340,300 600,180 860,300" fill="url(#roof)"/>
+  <line x1="600" y1="180" x2="600" y2="110" stroke="#475569" stroke-width="4"/>
+  <polygon points="600,110 682,126 600,142" fill="#3b82f6"/>
+  <rect x="560" y="480" width="80" height="140" fill="#92400e"/>
+  <circle cx="628" cy="560" r="5" fill="#fde047"/>
+  <g fill="#bae6fd" stroke="#94a3b8" stroke-width="3">
+    <rect x="410" y="340" width="70" height="60"/>
+    <rect x="510" y="340" width="70" height="60"/>
+    <rect x="620" y="340" width="70" height="60"/>
+    <rect x="720" y="340" width="70" height="60"/>
+    <rect x="410" y="430" width="70" height="60"/>
+    <rect x="720" y="430" width="70" height="60"/>
+  </g>
+  <g>
+    <rect x="150" y="540" width="24" height="80" fill="#92400e"/>
+    <circle cx="162" cy="500" r="55" fill="#22c55e"/>
+    <circle cx="130" cy="520" r="30" fill="#16a34a"/>
+    <rect x="1020" y="540" width="24" height="80" fill="#92400e"/>
+    <circle cx="1032" cy="500" r="55" fill="#22c55e"/>
+    <circle cx="1062" cy="522" r="30" fill="#16a34a"/>
+  </g>
+</svg>

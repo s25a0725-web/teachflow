@@ -18,23 +18,21 @@ c.post("/classes", data={"action": "add_class", "name": "1A", "subject": "Math",
 c.post("/classes", data={"action": "add_student", "class_id": "1", "name": "S1", "parent_name": "P", "parent_email": "p@x.com"})
 c.post("/grading/new", data={"title": "T", "class_id": "1", "total_marks": "10"})
 c.post("/lesson-plans", data={"topic": "X", "subject": "Y", "grade": "1", "duration": "60", "lp_lang": "en"})
-c.post("/quizzes", data={"topic": "X", "subject": "Mathematics", "grade": "1", "num": "2", "difficulty": "easy", "qz_lang": "en", "qz_type": "objective"})
 
 db = get_db()
 before = {t: db.execute(f"SELECT COUNT(*) c FROM {t}").fetchone()["c"]
-          for t in ["classes", "students", "assignments", "lesson_plans", "quizzes"]}
+          for t in ["classes", "students", "assignments", "lesson_plans"]}
 db.close()
 print("before:", before)
 
 c.post("/students/1/delete")
 c.post("/classes/1/delete")
 c.post("/lesson-plans/1/delete")
-c.post("/quizzes/1/delete")
 c.post("/grading/1/delete")
 
 db = get_db()
 after = {t: db.execute(f"SELECT COUNT(*) c FROM {t}").fetchone()["c"]
-         for t in ["classes", "students", "assignments", "submissions", "lesson_plans", "quizzes"]}
+         for t in ["classes", "students", "assignments", "submissions", "lesson_plans"]}
 db.close()
 print("after:", after)
 assert all(v == 0 for v in after.values()), "delete cascade failed"

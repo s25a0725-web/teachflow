@@ -19,9 +19,13 @@ def create_app():
     from auth import bp as auth_bp
     from views import bp as views_bp
     from documents import bp as documents_bp
+    from studio import bp as studio_bp
+    from study import bp as study_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
+    app.register_blueprint(studio_bp)
+    app.register_blueprint(study_bp)
 
     @app.context_processor
     def inject_globals():
@@ -32,6 +36,8 @@ def create_app():
             "lang": session.get("lang", "en"),
             "brand_name": get_setting("school_name") or "SJK(T) Sepang",
             "brand_tagline": get_setting("tagline") or t("tagline", session.get("lang", "en")),
+            "theme": get_setting("theme") or "default",
+            "bg_image": get_setting("bg_image") or "",
         }
 
     return app

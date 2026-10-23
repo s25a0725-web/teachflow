@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('studio_title', lang) }}</h1>
+{% if not lo %}<div class="flash flash-error">{{ t('studio_lo_missing', lang) }}</div>{% endif %}
+
+<div class="panel smart-box">
+  <h2>{{ t('studio_ask', lang) }}</h2>
+  <textarea id="s_ask" rows="2" placeholder="{{ t('studio_ask_ph', lang) }}"></textarea>
+  <button id="s_go" type="button">{{ t('studio_ask_go', lang) }}</button>
+  <div id="s_result" class="mt"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="create" type="button">{{ t('studio_create', lang) }}</button>
+  <button class="tab" data-tab="convert" type="button">{{ t('studio_convert', lang) }}</button>
+  <button class="tab" data-tab="templates" type="button">{{ t('studio_templates', lang) }}</button>
+</div>
+
+<div id="tab-create" class="tab-panel">
+  <div class="panel">
+    <div class="form-row">
+      <div><label>{{ t('topic', lang) }}</label><input id="c_topic" placeholder="e.g. Notis mesyuarat / Notice"></div>
+      <div><label>{{ t('studio_type', lang) }}</label>
+        <select id="c_type"><option value="docx">DOCX</option><option value="pptx">PPTX</option><option value="pdf">PDF</option></select>
+      </div>
+      <div><label>{{ t('language', lang) }}</label>
+        <select id="c_lang"><option value="en">English</option><option value="ms">Bahasa Malaysia</option><option value="ta">தமிழ்</option></select>
+      </div>
+    </div>
+    <label>{{ t('studio_instructions', lang) }}</label>
+    <input id="c_instructions">
+    <button id="c_generate" type="button">{{ t('studio_generate_download', lang) }}</button>
+    <div id="c_result" class="mt" style="display:none">
+      <a id="c_link" class="btn secondary" target="_blank">{{ t('doc_download', lang) }}</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>{{ t('studio_editor', lang) }}</h2>
+    <textarea id="e_text" rows="14" style="font-family:monospace"></textarea>
+    <div class="form-row">
+      <div>
+        <select id="e_type"><option value="docx">DOCX</option><option value="pptx">PPTX</option><option value="pdf">PDF</option></select>
+      </div>
+      <div><button id="e_export" type="button">{{ t('studio_export', lang) }}</button></div>
+    </div>
+    <a id="e_link" class="btn secondary" target="_blank" style="display:none">{{ t('doc_download', lang) }}</a>
+
+    <h3>{{ t('studio_ai_fix', lang) }}</h3>
+    <div class="form-row">
+      <div><input id="ai_instruction" placeholder="{{ t('studio_ai_instruction', lang) }}"></div>
+      <div><button id="ai_apply" type="button">{{ t('studio_apply_fix', lang) }}</button></div>
+    </div>
+    <div id="ai_note" class="muted"></div>
+  </div>
+</div>
+
+<div id="tab-convert" class="tab-panel" style="display:none">
+  <div class="panel">
+    <div class="form-row">
+      <div><label>{{ t('doc_file', lang) }}</label><input type="file" id="v_file"></div>
+      <div><label>{{ t('studio_target', lang) }}</label>
+        <select id="v_target"><option value="pdf">PDF</option><option value="docx">DOCX</option><option value="csv">CSV</option></select>
+      </div>
+      <div><button id="v_go" type="button">{{ t('studio_convert', lang) }}</button></div>
+    </div>
+    <div id="v_result" class="mt"></div>
+  </div>
+</div>
+
+<div id="tab-templates" class="tab-panel" style="display:none">
+  <div class="panel">
+    <form method="post" action="{{ url_for('studio.tpl_upload') }}" enctype="multipart/form-data">
+      <div class="form-row">
+        <div><label>{{ t('studio_tpl_name', lang) }}</label><input name="name"></div>
+        <div><label>{{ t('doc_file', lang) }} (DOCX/PPTX)</label><input type="file" name="file" required></div>
+        <div><button type="submit">{{ t('studio_upload_tpl', lang) }}</button></div>
+      </div>
+    </form>
+  </div>
+
+  {% for tpl, ph in templates %}
+  <div class="panel">
+    <strong>{{ tpl.name }}</strong> <span class="muted">({{ tpl.type }})</span>
+    <form class="inline-form" method="post" action="{{ url_for('studio.tpl_rename', tid=tpl.id) }}">
+      <input name="name" value="{{ tpl.name }}" style="width:auto; display:inline-block">
+      <button class="small" type="submit">{{ t('studio_rename', lang) }}</button>
+    </form>
+    <form class="inline-form" method="post" action="{{ url_for('studio.tpl_delete', tid=tpl.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+      <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+    </form>
+    {% if ph %}
+    <form method="post" action="{{ url_for('studio.tpl_generate', tid=tpl.id) }}">
+      <label>{{ t('topic', lang) }}</label><input name="topic" placeholder="(auto-fills title/topic)">
+      {% for p in ph %}
+      <label>{{ p }}</label><input name="ph_{{ p }}">
+      {% endfor %}
+      <button type="submit">{{ t('studio_generate', lang) }}</button>
+    </form>
+    {% else %}
+    <p class="muted">{{ t('studio_no_placeholders', lang) }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var lang = "{{ lang }}";
+  var noAiMsg = "{{ t('studio_no_ai', lang) }}";
+  var dlLabel = "{{ t('doc_download', lang) }}";
+
+  document.getElementById('s_go').addEventListener('click', function () {
+    var v = document.getElementById('s_ask').value;
+    fetch('/studio/smart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ask: v }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        var el = document.getElementById('s_result');
+        if (d.link) {
+          el.innerHTML = '<a class="btn secondary" href="' + d.link + '" target="_blank">\u2B07 ' + dlLabel + '</a> <span class="muted">' + (d.label || '') + '</span>';
+        }
+        if (d.preview) document.getElementById('e_text').value = d.preview;
+      });
+  });
+
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(function (p) { p.style.display = 'none'; });
+      document.getElementById('tab-' + b.dataset.tab).style.display = 'block';
+    });
+  });
+
+  document.getElementById('c_generate').addEventListener('click', function () {
+    var fd = new FormData();
+    fd.append('topic', document.getElementById('c_topic').value);
+    fd.append('doc_type', document.getElementById('c_type').value);
+    fd.append('lang', document.getElementById('c_lang').value);
+    fd.append('instructions', document.getElementById('c_instructions').value);
+    fetch('/studio/create', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.link) {
+        var a = document.getElementById('c_link');
+        a.href = d.link; a.textContent = '\u2B07 ' + dlLabel;
+        document.getElementById('c_result').style.display = 'block';
+      }
+      if (d.text) document.getElementById('e_text').value = d.text;
+    });
+  });
+
+  document.getElementById('e_export').addEventListener('click', function () {
+    fetch('/studio/export', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: document.getElementById('e_text').value, doc_type: document.getElementById('e_type').value })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.link) {
+        var a = document.getElementById('e_link');
+        a.href = d.link; a.textContent = '\u2B07 ' + dlLabel;
+        a.style.display = 'inline-block';
+      }
+    });
+  });
+
+  document.getElementById('ai_apply').addEventListener('click', function () {
+    fetch('/studio/ai-fix', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: document.getElementById('e_text').value, instruction: document.getElementById('ai_instruction').value, lang: lang })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.text) document.getElementById('e_text').value = d.text;
+      document.getElementById('ai_note').textContent = (d.note === 'no_ai') ? noAiMsg : '';
+    });
+  });
+
+  document.getElementById('v_go').addEventListener('click', function () {
+    var fd = new FormData();
+    fd.append('file', document.getElementById('v_file').files[0]);
+    fd.append('target', document.getElementById('v_target').value);
+    fetch('/studio/convert', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+      var el = document.getElementById('v_result');
+      if (d.link) el.innerHTML = '<a class="btn secondary" href="' + d.link + '" target="_blank">\u2B07 ' + dlLabel + '</a>';
+      else if (d.error) el.innerHTML = '<div class="flash flash-error">' + d.error + '</div>';
+    });
+  });
+})();
+</script>
+{% endblock %}

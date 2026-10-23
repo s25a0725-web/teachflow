@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('study_title', lang) }}</h1>
+
+<div class="study-layout">
+  <!-- SOURCES -->
+  <aside class="study-col">
+    <h2>{{ t('study_notebooks', lang) }}</h2>
+    <form method="post" action="{{ url_for('study.create_notebook') }}" class="inline-form">
+      <input name="name" placeholder="{{ t('study_new_nb_ph', lang) }}" required>
+      <button type="submit">{{ t('study_create', lang) }}</button>
+    </form>
+    <ul class="nb-list" id="nb_list">
+      {% for n in notebooks %}
+      <li class="nb-item" data-id="{{ n.id }}">
+        <div class="nb-name">{{ n.name }} <span class="muted">({{ n.cnt }})</span></div>
+        <form method="post" action="{{ url_for('study.delete_notebook', nbid=n.id) }}"
+              onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
+          <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <h3>{{ t('study_sources', lang) }}</h3>
+    <form method="post" id="src_form" enctype="multipart/form-data">
+      <input type="file" name="file" id="src_file">
+      <input name="url" id="src_url" placeholder="{{ t('study_url_ph', lang) }}">
+      <button type="submit">{{ t('study_add_source', lang) }}</button>
+    </form>
+    <ul id="src_list" class="src-list"></ul>
+  </aside>
+
+  <!-- CHAT -->
+  <section class="study-col">
+    <h2>{{ t('study_chat', lang) }}</h2>
+    <div id="chat_log" class="chat-log"></div>
+    <div class="chat-input">
+      <textarea id="q_input" rows="2" placeholder="{{ t('study_ask_ph', lang) }}"></textarea>
+      <button id="q_send" type="button">{{ t('study_ask', lang) }}</button>
+    </div>
+  </section>
+
+  <!-- STUDIO -->
+  <section class="study-col">
+    <h2>{{ t('study_studio', lang) }}</h2>
+    <div class="gen-row">
+      <select id="g_kind">
+        <option value="summary">{{ t('study_kind_summary', lang) }}</option>
+        <option value="quiz">{{ t('study_kind_quiz', lang) }}</option>
+        <option value="flashcards">{{ t('study_kind_flashcards', lang) }}</option>
+        <option value="mindmap">{{ t('study_kind_mindmap', lang) }}</option>
+        <option value="booklet">{{ t('study_kind_booklet', lang) }}</option>
+        <option value="infographic">{{ t('study_kind_infographic', lang) }}</option>
+        <option value="audio">{{ t('study_kind_audio', lang) }}</option>
+      </select>
+      <select id="g_lang">
+        <option value="en">English</option><option value="ms">Bahasa Malaysia</option><option value="ta">தமிழ்</option>
+      </select>
+    </div>
+    <div class="gen-row">
+      <select id="g_level">
+        <option value="easy">{{ t('study_easy', lang) }}</option>
+        <option value="medium" selected>{{ t('study_medium', lang) }}</option>
+        <option value="hard">{{ t('study_hard', lang) }}</option>
+      </select>
+      <select id="g_length">
+        <option value="short">{{ t('study_short', lang) }}</option>
+        <option value="medium" selected>{{ t('study_medium_len', lang) }}</option>
+        <option value="long">{{ t('study_long', lang) }}</option>
+      </select>
+      <input id="g_title" placeholder="{{ t('study_title_ph', lang) }}">
+    </div>
+    <button id="g_go" type="button" class="primary">{{ t('study_generate', lang) }}</button>
+    <div id="outputs" class="outputs"></div>
+    <div id="items_list" class="items-list"></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var lang = "{{ lang }}";
+  var currentNb = null;
+  var lastQuiz = null;
+
+  function dl(links) {
+    if (!links || !links.length) return '';
+    return '<div class="links">' + links.map(function (l) {
+      return '<a class="btn small secondary" href="' + l.url + '" target="_blank">' + l.label + '</a>';
+    }).join(' ') + '</div>';
+  }
+
+  function esc(s) { return (s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function selectNb(id) {
+    currentNb = id;
+    document.querySelectorAll('.nb-item').forEach(function (li) {
+      li.classList.toggle('active', li.dataset.id == id);
+    });
+    var form = document.getElementById('src_form');
+    form.action = '/study/notebooks/' + id + '/sources';
+    fetch('/study/notebook/' + id).then(function (r) { return r.json(); }).then(function (d) {
+      var ul = document.getElementById('src_list');
+      ul.innerHTML = '';
+      (d.sources || []).forEach(function (s) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span>' + esc(s.name) + ' <span class="muted">(' + s.kind + ', ' + s.page_count + 'p)</span></span>' +
+          '<form method="post" action="/study/sources/' + s.id + '/delete" style="display:inline">' +
+          '<button class="danger small" type="submit">x</button></form>';
+        ul.appendChild(li);
+      });
+      var il = document.getElementById('items_list');
+      il.innerHTML = '';
+      (d.items || []).forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'item-row';
+        var extra = (it.kind === 'flashcards') ? '<a class="btn small" href="/study/flashcards/' + it.id + '">Flip</a>' : '';
+        if (it.kind === 'audio' || it.kind === 'summary') extra += ' <a class="btn small" href="/study/audio/' + it.id + '">Audio</a>';
+        row.innerHTML = '<span class="muted">' + it.kind + '</span> ' + esc(it.title) + ' ' + extra +
+          ' <button class="danger small" data-iid="' + it.id + '">Del</button>';
+        il.appendChild(row);
+      });
+      il.querySelectorAll('button[data-iid]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          fetch('/study/items/' + b.dataset.iid + '/delete', { method: 'POST' }).then(function () { selectNb(id); });
+        });
+      });
+    });
+  }
+
+  // initial selection
+  var first = document.querySelector('.nb-item');
+  if (first) selectNb(first.dataset.id);
+  document.querySelectorAll('.nb-item .nb-name').forEach(function (el) {
+    el.addEventListener('click', function () { selectNb(el.parentElement.dataset.id); });
+  });
+
+  // chat
+  function sendChat() {
+    var q = document.getElementById('q_input').value.trim();
+    if (!q || !currentNb) return;
+    var log = document.getElementById('chat_log');
+    log.insertAdjacentHTML('beforeend', '<div class="msg user">' + esc(q) + '</div>');
+    document.getElementById('q_input').value = '';
+    fetch('/study/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notebook_id: currentNb, question: q, lang: lang }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        var html = '';
+        if (d.note === 'empty') html = '<div class="msg bot muted">No sources / no match found.</div>';
+        else {
+          html = '<div class="msg bot">' + esc(d.answer) + '</div>';
+          if (d.note === 'offline') html += '<div class="msg note muted">(' + '{{ t('study_offline_note', lang) }}' + ')</div>';
+          if (d.citations && d.citations.length) {
+            html += '<div class="cites">' + d.citations.map(function (c) {
+              return '<div class="cite"><b>' + esc(c.source) + ' · p.' + c.page + '</b><br>' + esc(c.snippet) + '</div>';
+            }).join('') + '</div>';
+          }
+        }
+        log.insertAdjacentHTML('beforeend', html);
+        log.scrollTop = log.scrollHeight;
+      });
+  }
+  document.getElementById('q_send').addEventListener('click', sendChat);
+  document.getElementById('q_input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+
+  // generate
+  document.getElementById('g_go').addEventListener('click', function () {
+    if (!currentNb) return;
+    var kind = document.getElementById('g_kind').value;
+    var body = { notebook_id: currentNb, kind: kind, lang: document.getElementById('g_lang').value,
+      level: document.getElementById('g_level').value, length: document.getElementById('g_length').value,
+      title: document.getElementById('g_title').value };
+    fetch('/study/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        var out = document.getElementById('outputs');
+        if (d.error) { out.innerHTML = '<div class="flash flash-error">' + d.error + '</div>'; return; }
+        var html = '<div class="out-card"><h3>' + esc(d.title) + '</h3>' + dl(d.links);
+        var p = d.payload || {};
+        if (d.kind === 'summary') html += '<p>' + esc(p.summary) + '</p>';
+        if (d.kind === 'quiz') {
+          lastQuiz = { title: d.title, questions: p.questions, lang: document.getElementById('g_lang').value,
+            subject: document.getElementById('g_title').value || '' };
+          html += '<ol class="quiz-list">' + (p.questions || []).map(function (q, i) {
+            return '<li><b>' + (q.type === 'tf' ? '[T/F] ' : q.type === 'mcq' ? '[MCQ] ' : '[Short] ') + '</b>' + esc(q.q) +
+              (q.options && q.options.length ? '<div class="muted">' + q.options.map(esc).join(' | ') + '</div>' : '') +
+              '<div class="ans">A: ' + esc(q.a) + '</div></li>';
+          }).join('') + '</ol>';
+          html += '<button class="btn primary" id="save_qz">' + '{{ t('study_save_quiz', lang) }}' + '</button>';
+        }
+        if (d.kind === 'flashcards') {
+          html += '<a class="btn primary" href="/study/flashcards/' + d.item_id + '">' + '{{ t('study_open_cards', lang) }}' + '</a>';
+        }
+        if (d.kind === 'mindmap') {
+          if (p.svg) html += '<div class="svg-wrap">' + p.svg + '</div>';
+          else html += '<ul>' + (p.branches || []).map(function (b) { return '<li><b>' + esc(b.node) + '</b></li>'; }).join('') + '</ul>';
+        }
+        if (d.kind === 'infographic') {
+          if (p.svg) html += '<div class="svg-wrap">' + p.svg + '</div>';
+          else html += '<div class="muted">' + esc(p.summary || '') + '</div>';
+        }
+        if (d.audio_url) html += '<audio controls src="' + d.audio_url + '" style="width:100%"></audio>';
+        html += '</div>';
+        out.innerHTML = html;
+        var sq = document.getElementById('save_qz');
+        if (sq) sq.addEventListener('click', function () {
+          if (!lastQuiz) return;
+          fetch('/study/save-quiz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastQuiz) })
+            .then(function (r) { return r.json(); }).then(function (res) {
+              sq.textContent = res.ok ? 'Saved' : 'Error';
+            });
+        });
+        selectNb(currentNb);
+      });
+  });
+})();
+</script>
+{% endblock %}

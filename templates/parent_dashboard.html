@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('welcome', lang) }}, {{ session.get('parent_name') }}</h1>
+
+<h2>{{ t('nav_children', lang) }}</h2>
+{% if children %}
+{% for s, rep in reports %}
+<div class="panel">
+  <h3>{{ s.name }} <span class="muted">{% if rep %}({{ rep.student.class_name }}){% endif %}</span></h3>
+  {% if rep and rep.grades %}
+  <table>
+    <tr><th>{{ t('title', lang) }}</th><th>{{ t('marks', lang) }}</th><th>{{ t('gr_feedback', lang) }}</th></tr>
+    {% for g in rep.grades %}
+    <tr><td>{{ g.title }}</td><td>{{ g.marks }}/{{ g.total_marks }}</td><td>{{ g.feedback or '&mdash;' }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">{{ t('no_results', lang) }}</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="muted">{{ t('parent_no_children', lang) }}</p>
+{% endif %}
+{% endblock %}

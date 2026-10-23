@@ -10,6 +10,16 @@
     <input type="email" name="email" required>
     <label>{{ t('password', lang) }}</label>
     <input type="password" name="password" required minlength="6">
+    <label>{{ t('security_question', lang) }}</label>
+    <select name="security_question">
+      <option value="">{{ t('security_optional', lang) }}</option>
+      <option value="sq_pet">{{ t('sq_pet', lang) }}</option>
+      <option value="sq_school">{{ t('sq_school', lang) }}</option>
+      <option value="sq_city">{{ t('sq_city', lang) }}</option>
+      <option value="sq_mother">{{ t('sq_mother', lang) }}</option>
+    </select>
+    <label>{{ t('security_answer', lang) }}</label>
+    <input type="text" name="security_answer" autocomplete="off">
     <button type="submit">{{ t('register', lang) }}</button>
   </form>
   <p><a href="{{ url_for('auth.login') }}">{{ t('have_account', lang) }}</a></p>

@@ -6,14 +6,13 @@
 <title>{% block title %}{{ brand_name }}{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="theme-{{ theme }}{% if bg_image %} has-bg{% endif %}"{% if bg_image %} style="background-image: linear-gradient(rgba(255,255,255,0.86), rgba(255,255,255,0.86)), url('{{ url_for('views.branding_background') }}')"{% endif %}>
 {% if session.get('user_id') %}
 <nav class="navbar">
   <div class="brand"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</div>
   <div class="nav-links">
     <a href="{{ url_for('views.dashboard') }}" class="{{ 'active' if request.endpoint == 'views.dashboard' }}">{{ t('dashboard', lang) }}</a>
     <a href="{{ url_for('views.lesson_plans') }}">{{ t('nav_lesson_plans', lang) }}</a>
-    <a href="{{ url_for('views.quizzes') }}">{{ t('nav_quizzes', lang) }}</a>
     <a href="{{ url_for('views.grading') }}">{{ t('nav_grading', lang) }}</a>
     <a href="{{ url_for('views.attendance') }}">{{ t('nav_attendance', lang) }}</a>
     <a href="{{ url_for('views.teacher_attendance') }}">{{ t('nav_teacher_attendance', lang) }}</a>
@@ -22,6 +21,8 @@
     <a href="{{ url_for('views.parents') }}">{{ t('nav_parents', lang) }}</a>
     <a href="{{ url_for('views.classes') }}">{{ t('nav_classes', lang) }}</a>
     <a href="{{ url_for('documents.documents') }}">{{ t('nav_documents', lang) }}</a>
+    <a href="{{ url_for('studio.index') }}">{{ t('nav_studio', lang) }}</a>
+    <a href="{{ url_for('study.index') }}">{{ t('nav_study', lang) }}</a>
     {% if session.get('role') == 'admin' %}
     <a href="{{ url_for('views.settings') }}">{{ t('nav_settings', lang) }}</a>
     {% endif %}
@@ -32,6 +33,20 @@
     <a class="lang-opt {{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
     <a class="lang-opt {{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
     <a class="logout" href="{{ url_for('auth.logout') }}">{{ t('logout', lang) }}</a>
+  </div>
+</nav>
+{% elif session.get('parent_id') %}
+<nav class="navbar">
+  <div class="brand"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</div>
+  <div class="nav-links">
+    <a href="{{ url_for('views.parent_dashboard') }}">{{ t('nav_children', lang) }}</a>
+  </div>
+  <div class="nav-right">
+    <span class="user">{{ session.get('parent_name') }}</span>
+    <a class="lang-opt {{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
+    <a class="lang-opt {{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
+    <a class="lang-opt {{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
+    <a class="logout" href="{{ url_for('auth.parent_logout') }}">{{ t('logout', lang) }}</a>
   </div>
 </nav>
 {% endif %}
@@ -46,5 +61,24 @@
 </main>
 
 {% block scripts %}{% endblock %}
+
+<button id="chatToggle" class="chat-toggle" type="button"><img src="{{ url_for('static', filename='robot-white.svg') }}" class="robot-icon" alt="Chat"></button>
+<div id="chatPanel" class="chat-panel hidden" data-lang="{{ lang }}" data-greeting="{{ t('chat_greeting', lang) }}" data-download="{{ t('doc_download', lang) }}">
+  <div class="chat-header">
+    <div class="chat-header-title">
+      <img src="{{ url_for('static', filename='robot-white.svg') }}" class="robot-avatar" alt="">
+      <span>{{ t('chat_title', lang) }}</span>
+    </div>
+    <button id="chatClose" class="chat-close" type="button">&times;</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input">
+    <button id="chatAttach" class="chat-attach" type="button" title="{{ t('chat_attach', lang) }}">📎</button>
+    <input type="file" id="chatFile" style="display:none">
+    <input id="chatText" type="text" placeholder="{{ t('chat_placeholder', lang) }}">
+    <button id="chatSend" type="button">{{ t('chat_send', lang) }}</button>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

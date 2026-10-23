@@ -5,13 +5,17 @@ import os
 from datetime import date
 from functools import wraps
 from pathlib import Path
+from uuid import uuid4
 
 from flask import (
     Blueprint, render_template, request, redirect, url_for, session, flash, g,
     send_from_directory, current_app,
 )
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 
 from db import get_db, get_setting, set_setting
+from i18n import t
 from generators import (
     lesson_plan as gen_lesson_plan,
     generate_quiz,
@@ -158,58 +162,6 @@ def view_plan(pid):
     if plan is None:
         return redirect(url_for("views.lesson_plans"))
     return render_template("lesson_plan_view.html", plan=plan)
-
-
-# --------------------------------------------------------------------------
-# Quiz generator
-# --------------------------------------------------------------------------
-@bp.route("/quizzes", methods=["GET", "POST"])
-@login_required
-def quizzes():
-    uid = session["user_id"]
-    if request.method == "POST":
-        topic = request.form.get("topic", "").strip()
-        if not topic:
-            flash("gen_empty", "error")
-            return redirect(url_for("views.quizzes"))
-        subject = request.form.get("subject", "").strip()
-        grade = request.form.get("grade", "").strip()
-        num = int(request.form.get("num", "5"))
-        difficulty = request.form.get("difficulty", "medium")
-        qz_lang = request.form.get("qz_lang", lang())
-        qz_type = request.form.get("qz_type", "mixed")
-        qs = generate_quiz(subject, topic, grade, num, difficulty, qz_lang, qz_type)
-        db = get_db()
-        db.execute(
-            "INSERT INTO quizzes (teacher_id, title, subject, topic, language, questions_json) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (uid, f"{topic} - {subject}", subject, topic, qz_lang, json.dumps(qs)),
-        )
-        db.commit()
-        db.close()
-        return render_template("quizzes.html", questions=qs, saved=saved_quizzes(uid))
-
-    return render_template("quizzes.html", questions=None, saved=saved_quizzes(uid))
-
-
-def saved_quizzes(uid):
-    db = get_db()
-    rows = db.execute("SELECT * FROM quizzes WHERE teacher_id=? ORDER BY id DESC LIMIT 20", (uid,)).fetchall()
-    db.close()
-    return rows
-
-
-@bp.route("/quizzes/<int:qid>")
-@login_required
-def view_quiz(qid):
-    uid = session["user_id"]
-    db = get_db()
-    qz = db.execute("SELECT * FROM quizzes WHERE id=? AND teacher_id=?", (qid, uid)).fetchone()
-    db.close()
-    if qz is None:
-        return redirect(url_for("views.quizzes"))
-    questions = json.loads(qz["questions_json"])
-    return render_template("quiz_view.html", qz=qz, questions=questions)
 
 
 # --------------------------------------------------------------------------
@@ -377,6 +329,126 @@ def branding_logo():
     return send_from_directory(current_app.static_folder, "logo.svg")
 
 
+@bp.route("/branding/background")
+def branding_background():
+    fname = get_setting("bg_image")
+    if fname and (BRANDING_DIR / fname).exists():
+        return send_from_directory(str(BRANDING_DIR), fname)
+    return send_from_directory(current_app.static_folder, "bg-school.svg")
+
+
+@bp.route("/chatbot", methods=["POST"])
+def chatbot():
+    from chatbot import respond, ai_respond
+    data = request.get_json(silent=True) or {}
+    message = data.get("message", "")
+    use_lang = data.get("lang") or lang()
+    ai = ai_respond(message, use_lang)
+    if ai:
+        return {"reply": ai}
+    return {"reply": respond(message, use_lang)}
+
+
+# --------------------------------------------------------------------------
+# Chatbox file upload + department organising + conversion
+# --------------------------------------------------------------------------
+def _doc_dir(uid):
+    d = _UPLOAD_ROOT / "documents" / str(uid)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _subjects(uid):
+    db = get_db()
+    rows = db.execute(
+        "SELECT DISTINCT subject FROM classes WHERE teacher_id=? AND subject IS NOT NULL AND subject != ''",
+        (uid,)).fetchall()
+    db.close()
+    return [r["subject"] for r in rows]
+
+
+def _find_folder(uid, name):
+    if not name:
+        return None
+    db = get_db()
+    row = db.execute("SELECT id FROM folders WHERE teacher_id=? AND lower(name)=lower(?)", (uid, name)).fetchone()
+    if row:
+        fid = row["id"]
+        db.close()
+        return fid
+    cur = db.execute("INSERT INTO folders (teacher_id, name) VALUES (?, ?)", (uid, name))
+    db.commit()
+    fid = cur.lastrowid
+    db.close()
+    return fid
+
+
+def _detect_department(message, subjects):
+    m = (message or "").lower()
+    for s in subjects:
+        if s.lower() in m:
+            return s
+    return None
+
+
+def _detect_target(message):
+    m = (message or "").lower()
+    if "pdf" in m:
+        return "pdf"
+    if "text" in m or "teks" in m or "txt" in m:
+        return "txt"
+    return None
+
+
+@bp.route("/chatbot/upload", methods=["POST"])
+@login_required
+def chatbot_upload():
+    uid = session["user_id"]
+    f = request.files.get("file")
+    message = request.form.get("message", "")
+    if not f or not f.filename:
+        return {"reply": t("chat_no_file", lang())}
+
+    orig = f.filename
+    safe = secure_filename(orig) or f"{uuid4().hex}.bin"
+    stored = f"{uuid4().hex}_{safe}"
+    f.save(_doc_dir(uid) / stored)
+
+    subjects = _subjects(uid)
+    dept = _detect_department(message, subjects)
+    folder_id = _find_folder(uid, dept) if dept else None
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO documents (teacher_id, title, original_name, stored_name, mime_type, folder_id) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (uid, orig, orig, stored, f.mimetype or "", folder_id),
+    )
+    db.commit()
+    db.close()
+
+    reply = t("chat_saved", lang()).format(name=orig, dept=(dept or t("doc_uncategorized", lang())))
+    link = None
+    target = _detect_target(message)
+    if target:
+        from file_assistant import convert
+        out_name, out_mime = convert(_doc_dir(uid) / stored, orig, target)
+        if out_name:
+            db = get_db()
+            db.execute(
+                "INSERT INTO documents (teacher_id, title, original_name, stored_name, mime_type, folder_id) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (uid, f"{orig} ({target})", out_name, out_name, out_mime, folder_id),
+            )
+            db.commit()
+            row = db.execute("SELECT id FROM documents WHERE stored_name=? ORDER BY id DESC LIMIT 1", (out_name,)).fetchone()
+            db.close()
+            if row:
+                link = url_for("documents.document_file", did=row["id"])
+            reply += "\n" + t("chat_converted", lang()).format(target=target.upper())
+    return {"reply": reply, "link": link}
+
+
 @bp.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
@@ -387,6 +459,7 @@ def settings():
         if action == "branding":
             set_setting("school_name", request.form.get("school_name", "").strip())
             set_setting("tagline", request.form.get("tagline", "").strip())
+            set_setting("theme", request.form.get("theme", "default").strip())
             f = request.files.get("logo")
             if f and f.filename:
                 ext = Path(f.filename).suffix.lower()
@@ -395,9 +468,20 @@ def settings():
                 fname = f"logo{ext}"
                 f.save(BRANDING_DIR / fname)
                 set_setting("logo_filename", fname)
+            b = request.files.get("bg_image")
+            if b and b.filename:
+                ext = Path(b.filename).suffix.lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+                    ext = ".png"
+                bname = f"background{ext}"
+                b.save(BRANDING_DIR / bname)
+                set_setting("bg_image", bname)
             flash("settings_saved", "success")
         elif action == "remove_logo":
             set_setting("logo_filename", "")
+            flash("settings_saved", "success")
+        elif action == "remove_bg":
+            set_setting("bg_image", "")
             flash("settings_saved", "success")
         elif action == "user_role":
             target = int(request.form.get("user_id"))
@@ -408,6 +492,18 @@ def settings():
                 db.commit()
                 db.close()
                 flash("settings_saved", "success")
+        elif action == "user_reset_password":
+            target = int(request.form.get("user_id"))
+            new_pw = request.form.get("new_password", "")
+            if len(new_pw) < 6:
+                flash("reset_short", "error")
+            else:
+                db = get_db()
+                db.execute("UPDATE users SET password_hash=? WHERE id=?",
+                           (generate_password_hash(new_pw), target))
+                db.commit()
+                db.close()
+                flash("reset_done", "success")
         return redirect(url_for("views.settings"))
     db = get_db()
     users = db.execute("SELECT id, email, name, role FROM users ORDER BY id").fetchall()
@@ -415,6 +511,8 @@ def settings():
     return render_template("settings.html", users=users,
                            school_name=get_setting("school_name") or "",
                            tagline=get_setting("tagline") or "",
+                           theme=get_setting("theme") or "default",
+                           bg_image=get_setting("bg_image") or "",
                            has_logo=bool(get_setting("logo_filename")))
 
 
@@ -468,11 +566,12 @@ def classes():
                         request.form.get("subject", "").strip(),
                         request.form.get("grade", "").strip()))
         elif action == "add_student":
-            db.execute("INSERT INTO students (class_id, name, parent_name, parent_email) VALUES (?, ?, ?, ?)",
+            db.execute("INSERT INTO students (class_id, name, parent_name, parent_email, ic_number) VALUES (?, ?, ?, ?, ?)",
                        (int(request.form.get("class_id")),
                         request.form.get("name", "").strip(),
                         request.form.get("parent_name", "").strip(),
-                        request.form.get("parent_email", "").strip()))
+                        request.form.get("parent_email", "").strip(),
+                        request.form.get("ic_number", "").strip()))
         db.commit()
 
     classes_rows = my_classes(uid)
@@ -599,18 +698,6 @@ def delete_plan(pid):
     return redirect(url_for("views.lesson_plans"))
 
 
-@bp.route("/quizzes/<int:qid>/delete", methods=["POST"])
-@login_required
-def delete_quiz(qid):
-    uid = session["user_id"]
-    db = get_db()
-    db.execute("DELETE FROM quizzes WHERE id=? AND teacher_id=?", (qid, uid))
-    db.commit()
-    db.close()
-    flash("deleted", "success")
-    return redirect(url_for("views.quizzes"))
-
-
 @bp.route("/grading/<int:aid>/delete", methods=["POST"])
 @login_required
 def delete_assignment(aid):
@@ -727,3 +814,33 @@ def delete_user(uid2):
     db.close()
     flash("deleted", "success")
     return redirect(url_for("views.settings"))
+
+
+# --------------------------------------------------------------------------
+# Parent portal (separate login)
+# --------------------------------------------------------------------------
+def parent_login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "parent_id" not in session:
+            return redirect(url_for("auth.parent_login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+@bp.route("/parent")
+@parent_login_required
+def parent_dashboard():
+    email = session.get("parent_email", "")
+    ic_number = session.get("parent_ic", "")
+    db = get_db()
+    if ic_number:
+        children = db.execute(
+            "SELECT * FROM students WHERE lower(parent_email)=lower(?) OR ic_number=? ORDER BY name",
+            (email, ic_number)).fetchall()
+    else:
+        children = db.execute(
+            "SELECT * FROM students WHERE lower(parent_email)=lower(?) ORDER BY name", (email,)).fetchall()
+    db.close()
+    reports = [(s, build_report(s["id"])) for s in children]
+    return render_template("parent_dashboard.html", children=children, reports=reports)

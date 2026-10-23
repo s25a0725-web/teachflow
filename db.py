@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'teacher',
+    security_question TEXT,
+    security_answer_hash TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS students (
     name TEXT NOT NULL,
     parent_name TEXT,
     parent_email TEXT,
+    ic_number TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -162,6 +165,61 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT
 );
+
+CREATE TABLE IF NOT EXISTS parent_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT,
+    ic_number TEXT,
+    password_hash TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS studio_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL REFERENCES users(id),
+    name TEXT NOT NULL,
+    stored_name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS notebooks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL REFERENCES users(id),
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    notebook_id INTEGER NOT NULL REFERENCES notebooks(id),
+    teacher_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    stored_name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    page_count INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS chunks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER NOT NULL REFERENCES sources(id),
+    teacher_id INTEGER NOT NULL,
+    idx INTEGER NOT NULL,
+    page INTEGER DEFAULT 1,
+    text TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS study_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    notebook_id INTEGER,
+    kind TEXT NOT NULL,
+    title TEXT,
+    content TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 
@@ -184,6 +242,30 @@ def init_db():
     att_cols = {r[1] for r in conn.execute("PRAGMA table_info(attendance)").fetchall()}
     if "time" not in att_cols:
         conn.execute("ALTER TABLE attendance ADD COLUMN time TEXT")
+    stud_cols = {r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
+    if "ic_number" not in stud_cols:
+        conn.execute("ALTER TABLE students ADD COLUMN ic_number TEXT")
+    user_cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+    if "security_question" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN security_question TEXT")
+    if "security_answer_hash" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN security_answer_hash TEXT")
+    par_cols = {r[1] for r in conn.execute("PRAGMA table_info(parent_accounts)").fetchall()}
+    if "ic_number" not in par_cols:
+        conn.execute("ALTER TABLE parent_accounts RENAME TO parent_accounts_old")
+        conn.execute("""CREATE TABLE parent_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT,
+            ic_number TEXT,
+            password_hash TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )""")
+        conn.execute(
+            "INSERT INTO parent_accounts (id, email, ic_number, password_hash, name, created_at) "
+            "SELECT id, email, NULL, password_hash, name, created_at FROM parent_accounts_old"
+        )
+        conn.execute("DROP TABLE parent_accounts_old")
     conn.commit()
     conn.close()
 

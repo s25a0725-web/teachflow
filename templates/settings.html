@@ -12,11 +12,29 @@
     <input name="tagline" value="{{ tagline }}">
     <label>{{ t('settings_logo', lang) }}</label>
     <input type="file" name="logo" accept="image/*,.svg">
+    <label>{{ t('settings_background', lang) }}</label>
+    <select name="theme">
+      <option value="default" {{ 'selected' if theme == 'default' }}>Default</option>
+      <option value="ocean" {{ 'selected' if theme == 'ocean' }}>Ocean</option>
+      <option value="sunset" {{ 'selected' if theme == 'sunset' }}>Sunset</option>
+      <option value="forest" {{ 'selected' if theme == 'forest' }}>Forest</option>
+      <option value="rose" {{ 'selected' if theme == 'rose' }}>Rose</option>
+      <option value="midnight" {{ 'selected' if theme == 'midnight' }}>Midnight</option>
+      <option value="school3d" {{ 'selected' if theme == 'school3d' }}>3D School</option>
+      <option value="classroom3d" {{ 'selected' if theme == 'classroom3d' }}>3D Classroom</option>
+      <option value="books3d" {{ 'selected' if theme == 'books3d' }}>3D Books</option>
+    </select>
+    <label>{{ t('settings_bg_image', lang) }}</label>
+    <input type="file" name="bg_image" accept="image/*">
     <button type="submit">{{ t('save', lang) }}</button>
   </form>
   <form method="post" class="mt">
     <input type="hidden" name="action" value="remove_logo">
     <button class="secondary" type="submit">{{ t('settings_remove_logo', lang) }}</button>
+  </form>
+  <form method="post" class="mt">
+    <input type="hidden" name="action" value="remove_bg">
+    <button class="secondary" type="submit">{{ t('settings_remove_bg', lang) }}</button>
   </form>
   <div class="mt">
     <img src="{{ url_for('views.branding_logo') }}" class="logo" style="height:64px" alt="{{ brand_name }}">
@@ -44,6 +62,12 @@
             <option value="admin" {{ 'selected' if u.role == 'admin' }}>{{ t('admin', lang) }}</option>
           </select>
           <button class="small" type="submit">{{ t('save', lang) }}</button>
+        </form>
+        <form class="inline-form" method="post">
+          <input type="hidden" name="action" value="user_reset_password">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <input type="password" name="new_password" placeholder="{{ t('new_password', lang) }}" minlength="6" required style="width:auto; display:inline-block">
+          <button class="small" type="submit">{{ t('reset_password_btn', lang) }}</button>
         </form>
         <form class="inline-form" method="post" action="{{ url_for('views.delete_user', uid2=u.id) }}" onsubmit="return confirm('{{ t('confirm_delete', lang) }}');">
           <button class="danger small" type="submit">{{ t('delete', lang) }}</button>
