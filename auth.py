@@ -4,6 +4,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import get_db
+import userstore
 
 bp = Blueprint("auth", __name__, url_prefix="")
 
@@ -14,24 +15,18 @@ def register():
         email = request.form["email"].strip().lower()
         name = request.form["name"].strip()
         password = request.form["password"]
-        db = get_db()
-        existing = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
-        if existing:
-            db.close()
+        if userstore.get_by_email(email):
             flash("email_exists", "error")
             return redirect(url_for("auth.register"))
-        count = db.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
-        role = "admin" if count == 0 else "teacher"
-        db.execute(
-            "INSERT INTO users (email, password_hash, name, role, security_question, security_answer_hash) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (email, generate_password_hash(password), name, role,
-             request.form.get("security_question", "").strip() or None,
-             generate_password_hash(request.form.get("security_answer", "").strip())
-             if request.form.get("security_answer", "").strip() else None),
+        role = "admin" if userstore.count() == 0 else "teacher"
+        userstore.add(
+            email=email,
+            password=password,
+            name=name,
+            role=role,
+            security_question=request.form.get("security_question", "").strip() or None,
+            security_answer=request.form.get("security_answer", "").strip() or None,
         )
-        db.commit()
-        db.close()
         flash("registered", "success")
         return redirect(url_for("auth.login"))
     return render_template("register.html")
@@ -42,10 +37,8 @@ def login():
     if request.method == "POST":
         email = request.form["email"].strip().lower()
         password = request.form["password"]
-        db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        db.close()
-        if user and check_password_hash(user["password_hash"], password):
+        user = userstore.get_by_email(email)
+        if userstore.check(user, password):
             session.clear()
             session["user_id"] = user["id"]
             session["role"] = user["role"]
@@ -73,9 +66,7 @@ SECURITY_QUESTIONS = ("sq_pet", "sq_school", "sq_city", "sq_mother")
 def forgot_password():
     if request.method == "POST":
         email = request.form["email"].strip().lower()
-        db = get_db()
-        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        db.close()
+        user = userstore.get_by_email(email)
         if user is None:
             flash("reset_email_unknown", "error")
             return redirect(url_for("auth.forgot_password"))
@@ -92,9 +83,7 @@ def reset_password():
     uid = session.get("reset_user_id")
     if not uid:
         return redirect(url_for("auth.forgot_password"))
-    db = get_db()
-    user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
-    db.close()
+    user = userstore.get_by_id(uid)
     if user is None or not user["security_question"]:
         session.pop("reset_user_id", None)
         return redirect(url_for("auth.forgot_password"))
@@ -107,11 +96,7 @@ def reset_password():
         if len(password) < 6:
             flash("reset_short", "error")
             return redirect(url_for("auth.reset_password"))
-        db = get_db()
-        db.execute("UPDATE users SET password_hash = ? WHERE id = ?",
-                   (generate_password_hash(password), uid))
-        db.commit()
-        db.close()
+        userstore.update_password(uid, password)
         session.pop("reset_user_id", None)
         flash("reset_done", "success")
         return redirect(url_for("auth.login"))

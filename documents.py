@@ -14,6 +14,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from db import get_db
+import userstore
 from views import login_required
 
 bp = Blueprint("documents", __name__)
@@ -64,9 +65,7 @@ def _save_signature(data_url):
 
 
 def _signer_identity():
-    db = get_db()
-    u = db.execute("SELECT email FROM users WHERE id=?", (session["user_id"],)).fetchone()
-    db.close()
+    u = userstore.get_by_id(session["user_id"])
     return u["email"] if u else ""
 
 

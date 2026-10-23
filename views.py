@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 
 from db import get_db, get_setting, set_setting
+import userstore
 from i18n import t
 from generators import (
     lesson_plan as gen_lesson_plan,
@@ -46,10 +47,7 @@ def login_required(f):
 def current_user():
     if "user_id" not in session:
         return None
-    db = get_db()
-    u = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
-    db.close()
-    return u
+    return userstore.get_by_id(session["user_id"])
 
 
 def lang():
@@ -295,9 +293,11 @@ def teacher_attendance():
     att_date = request.form.get("date") if request.method == "POST" else (request.args.get("date") or date.today().isoformat())
     db = get_db()
     if is_admin:
-        teachers = db.execute("SELECT id, name FROM users ORDER BY name").fetchall()
+        teachers = [{"id": u["id"], "name": u["name"]} for u in
+                    sorted(userstore.all_users(), key=lambda u: (u.get("name") or "").lower())]
     else:
-        teachers = db.execute("SELECT id, name FROM users WHERE id=?", (uid,)).fetchall()
+        u = userstore.get_by_id(uid)
+        teachers = [{"id": u["id"], "name": u["name"]}] if u else []
 
     if request.method == "POST":
         for t in teachers:
@@ -487,10 +487,7 @@ def settings():
             target = int(request.form.get("user_id"))
             role = request.form.get("role")
             if target != session["user_id"] and role in ("admin", "teacher"):
-                db = get_db()
-                db.execute("UPDATE users SET role=? WHERE id=?", (role, target))
-                db.commit()
-                db.close()
+                userstore.update_role(target, role)
                 flash("settings_saved", "success")
         elif action == "user_reset_password":
             target = int(request.form.get("user_id"))
@@ -498,16 +495,10 @@ def settings():
             if len(new_pw) < 6:
                 flash("reset_short", "error")
             else:
-                db = get_db()
-                db.execute("UPDATE users SET password_hash=? WHERE id=?",
-                           (generate_password_hash(new_pw), target))
-                db.commit()
-                db.close()
+                userstore.update_password(target, new_pw)
                 flash("reset_done", "success")
         return redirect(url_for("views.settings"))
-    db = get_db()
-    users = db.execute("SELECT id, email, name, role FROM users ORDER BY id").fetchall()
-    db.close()
+    users = userstore.all_users()
     return render_template("settings.html", users=users,
                            school_name=get_setting("school_name") or "",
                            tagline=get_setting("tagline") or "",
@@ -809,9 +800,9 @@ def delete_user(uid2):
     db.execute("DELETE FROM teacher_attendance WHERE teacher_id=?", (uid2,))
     db.execute("DELETE FROM messages WHERE teacher_id=?", (uid2,))
     db.execute("DELETE FROM folders WHERE teacher_id=?", (uid2,))
-    db.execute("DELETE FROM users WHERE id=?", (uid2,))
     db.commit()
     db.close()
+    userstore.delete(uid2)
     flash("deleted", "success")
     return redirect(url_for("views.settings"))
 
