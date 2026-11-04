@@ -3,13 +3,18 @@
 <div class="panel auth-card">
   <div class="auth-logo"><img src="{{ url_for('views.branding_logo') }}" alt="{{ brand_name }}"></div>
   <h1>{{ t('register_title', lang) }}</h1>
-  <form method="post">
+  <p class="muted auth-subtitle">{{ brand_tagline }}</p>
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label>{{ t('name', lang) }}</label>
-    <input type="text" name="name" required autofocus>
+    <input type="text" name="name" required autofocus autocomplete="name">
     <label>{{ t('email', lang) }}</label>
-    <input type="email" name="email" required>
+    <input type="email" name="email" required autocomplete="email">
     <label>{{ t('password', lang) }}</label>
-    <input type="password" name="password" required minlength="6">
+    <div class="pw-field">
+      <input type="password" name="password" id="pw" required minlength="6" autocomplete="new-password">
+      <button type="button" class="pw-toggle" data-target="pw" aria-label="Show password" aria-pressed="false"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-eye"/></svg></button>
+    </div>
     <label>{{ t('security_question', lang) }}</label>
     <select name="security_question">
       <option value="">{{ t('security_optional', lang) }}</option>
@@ -20,8 +25,13 @@
     </select>
     <label>{{ t('security_answer', lang) }}</label>
     <input type="text" name="security_answer" autocomplete="off">
-    <button type="submit">{{ t('register', lang) }}</button>
+    <button type="submit" class="auth-submit">{{ t('register', lang) }}</button>
   </form>
-  <p><a href="{{ url_for('auth.login') }}">{{ t('have_account', lang) }}</a></p>
+  <div class="auth-links">
+    <a href="{{ url_for('auth.login') }}">{{ t('have_account', lang) }}</a>
+  </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='auth.js') }}"></script>
 {% endblock %}

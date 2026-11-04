@@ -13,6 +13,9 @@ teachflow.db
 # Uploaded files (local data, don't commit)
 uploads/
 
+# Auto-generated per-install session secret (never commit)
+.secret_key
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('nav_analytics', lang) }}</h1>
+<p class="muted">{{ t('analytics_subtitle', lang) }}</p>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></div>
+    <div class="stat-body"><div class="num" data-count="{{ kpi.students }}">0</div><div class="label">{{ t('stat_students', lang) }}</div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-class"/></svg></div>
+    <div class="stat-body"><div class="num" data-count="{{ kpi.classes }}">0</div><div class="label">{{ t('stat_classes', lang) }}</div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-report"/></svg></div>
+    <div class="stat-body"><div class="num">{{ kpi.avg_mark if kpi.avg_mark is not none else '&mdash;' }}</div><div class="label">{{ t('analytics_avg', lang) }}</div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg></div>
+    <div class="stat-body"><div class="num">{{ (kpi.att_rate ~ '%') if kpi.att_rate is not none else '&mdash;' }}</div><div class="label">{{ t('att_rate', lang) }}</div></div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel chart-panel">
+    <h2>{{ t('analytics_trend', lang) }}</h2>
+    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="panel chart-panel">
+    <h2>{{ t('analytics_attendance', lang) }}</h2>
+    <div class="chart-box"><canvas id="attChart"></canvas></div>
+  </div>
+  <div class="panel chart-panel">
+    <h2>{{ t('analytics_class', lang) }}</h2>
+    <div class="chart-box"><canvas id="classChart"></canvas></div>
+  </div>
+  <div class="panel chart-panel">
+    <h2>{{ t('analytics_distribution', lang) }}</h2>
+    <div class="chart-box"><canvas id="distChart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='chart.umd.js') }}"></script>
+<script>
+(function () {
+  var data = {{ chart|tojson }};
+  if (typeof Chart === 'undefined') return;
+
+  Chart.defaults.color = '#93a1bd';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+  Chart.defaults.font.family = 'Inter, Segoe UI, sans-serif';
+
+  // Trend: average marks per assignment
+  if (data.assign_labels && data.assign_labels.length) {
+    new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: {
+        labels: data.assign_labels,
+        datasets: [{
+          label: '{{ t('analytics_avg', lang) }}',
+          data: data.assign_avgs,
+          borderColor: '#22d3ee',
+          backgroundColor: 'rgba(34,211,238,0.15)',
+          fill: true, tension: 0.4, borderWidth: 2.5,
+          pointBackgroundColor: '#22d3ee', pointRadius: 4, pointHoverRadius: 6
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  // Attendance doughnut
+  new Chart(document.getElementById('attChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['{{ t('att_present', lang) }}', '{{ t('att_late', lang) }}', '{{ t('att_absent', lang) }}'],
+      datasets: [{ data: [data.att.present, data.att.late, data.att.absent],
+        backgroundColor: ['#34d399', '#fbbf24', '#fb7185'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Class performance
+  if (data.class_labels && data.class_labels.length) {
+    new Chart(document.getElementById('classChart'), {
+      type: 'bar',
+      data: { labels: data.class_labels,
+        datasets: [{ data: data.class_avgs, backgroundColor: '#8b5cf6', borderRadius: 8 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  // Marks distribution
+  if (data.dist_counts && data.dist_counts.length) {
+    new Chart(document.getElementById('distChart'), {
+      type: 'bar',
+      data: { labels: data.dist_labels,
+        datasets: [{ data: data.dist_counts, backgroundColor: '#3b82f6', borderRadius: 8 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+  }
+})();
+</script>
+{% endblock %}

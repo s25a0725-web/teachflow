@@ -3,14 +3,28 @@
 <div class="panel auth-card">
   <div class="auth-logo"><img src="{{ url_for('views.branding_logo') }}" alt="{{ brand_name }}"></div>
   <h1>{{ t('parent_login_title', lang) }}</h1>
-  <form method="post">
+  <p class="muted auth-subtitle">{{ brand_tagline }}</p>
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label>{{ t('parent_identifier', lang) }}</label>
-    <input type="text" name="identifier" required autofocus>
+    <input type="text" name="identifier" required autofocus autocomplete="username">
     <label>{{ t('password', lang) }}</label>
-    <input type="password" name="password" required>
-    <button type="submit">{{ t('login', lang) }}</button>
+    <div class="pw-field">
+      <input type="password" name="password" id="pw" required autocomplete="current-password">
+      <button type="button" class="pw-toggle" data-target="pw" aria-label="Show password" aria-pressed="false"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-eye"/></svg></button>
+    </div>
+    <div class="remember">
+      <input type="checkbox" name="remember" id="remember">
+      <label for="remember" class="remember-label">{{ t('remember_me', lang) }}</label>
+    </div>
+    <button type="submit" class="auth-submit">{{ t('login', lang) }}</button>
   </form>
-  <p><a href="{{ url_for('auth.parent_register') }}">{{ t('no_account', lang) }}</a></p>
-  <p><a href="{{ url_for('auth.login') }}">{{ t('teacher_login_link', lang) }}</a></p>
+  <div class="auth-links">
+    <a href="{{ url_for('auth.parent_register') }}">{{ t('no_account', lang) }}</a>
+    <a href="{{ url_for('auth.login') }}">{{ t('teacher_login_link', lang) }}</a>
+  </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='auth.js') }}"></script>
 {% endblock %}

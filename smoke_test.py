@@ -10,6 +10,9 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # Isolate test data from any real database / uploads so it never touches user data.
 os.environ["TEACHFLOW_DB"] = os.path.join(tempfile.mkdtemp(), "test.db")
 os.environ["TEACHFLOW_UPLOAD_ROOT"] = tempfile.mkdtemp()
+os.environ["TEACHFLOW_USERS"] = os.path.join(tempfile.mkdtemp(), "users.json")
+os.environ["TEACHFLOW_SECRET"] = "smoke-test-secret"
+os.environ["TEACHFLOW_CSRF"] = "0"  # broad functional test; CSRF covered separately in test_auth.py
 
 from app import app  # noqa: E402
 from db import get_db  # noqa: E402

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1 class="hero-title">{{ brand_name }}</h1>
+  <p class="hero-sub">{{ brand_tagline }}</p>
+  <div class="hero-actions">
+    <a class="btn" href="{{ url_for('auth.register') }}">{{ t('get_started', lang) }}</a>
+    <a class="btn secondary" href="{{ url_for('auth.login') }}">{{ t('login', lang) }}</a>
+  </div>
+</section>
+
+<section id="about" class="panel landing-section">
+  <h2>{{ t('nav_about', lang) }}</h2>
+  <p class="muted">{{ t('landing_about_body', lang) }}</p>
+</section>
+
+<section id="features" class="landing-section">
+  <h2>{{ t('nav_features', lang) }}</h2>
+  <div class="cards">
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plan"/></svg></span><span><strong>{{ t('nav_lesson_plans', lang) }}</strong></span></div>
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-grade"/></svg></span><span><strong>{{ t('nav_grading', lang) }}</strong></span></div>
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-attend"/></svg></span><span><strong>{{ t('nav_attendance', lang) }}</strong></span></div>
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-analytics"/></svg></span><span><strong>{{ t('nav_analytics', lang) }}</strong></span></div>
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></span><span><strong>{{ t('nav_documents', lang) }}</strong></span></div>
+    <div class="card"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-study"/></svg></span><span><strong>{{ t('nav_study', lang) }}</strong></span></div>
+  </div>
+</section>
+
+<section id="product" class="panel landing-section">
+  <h2>{{ t('nav_product', lang) }}</h2>
+  <p class="muted">{{ t('landing_product_body', lang) }}</p>
+</section>
+{% endblock %}

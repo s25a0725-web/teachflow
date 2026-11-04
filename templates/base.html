@@ -3,55 +3,143 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{% block title %}{{ brand_name }}{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="theme-{{ theme }}{% if bg_image %} has-bg{% endif %}"{% if bg_image %} style="background-image: linear-gradient(rgba(255,255,255,0.86), rgba(255,255,255,0.86)), url('{{ url_for('views.branding_background') }}')"{% endif %}>
+<body class="theme-{{ theme }}{% if bg_image %} has-bg{% endif %}{% if session.get('user_id') or session.get('parent_id') %} has-sidebar{% endif %}"{% if bg_image %} style="--bg-image: url('{{ url_for('views.branding_background') }}')"{% endif %}>
+
+<!-- Icon sprite (offline, inline SVG) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-grade" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></symbol>
+    <symbol id="i-attend" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+    <symbol id="i-time" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><path d="M5 21V13M12 21V7M19 21v-6"/><path d="M3 21h18"/></symbol>
+    <symbol id="i-parent" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H5l-2 2V11.5A8.5 8.5 0 0 1 11.5 3h1A8.5 8.5 0 0 1 21 11.5z"/></symbol>
+    <symbol id="i-class" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M16 4.5a4 4 0 0 1 0 7.5M20 21v-1a6 6 0 0 0-3-5.2"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-studio" viewBox="0 0 24 24"><path d="M12 3l1.9 4.2 4.6.7-3.3 3.2.8 4.5L12 13.5 8 15.6l.8-4.5L5.5 7.9l4.6-.7z"/><path d="M19 3v3M20.5 4.5h-3"/></symbol>
+    <symbol id="i-study" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M16 4.5a4 4 0 0 1 0 7.5M20 21v-1a6 6 0 0 0-3-5.2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><path d="M4 4l16 16"/></symbol>
+    <symbol id="i-analytics" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-6"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  </defs>
+</svg>
+
+<!-- Animated background -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="glow glow-a" aria-hidden="true"></div>
+<div class="glow glow-b" aria-hidden="true"></div>
+<div class="glow glow-c" aria-hidden="true"></div>
+<div class="bg-floor" aria-hidden="true"></div>
+
 {% if session.get('user_id') %}
-<nav class="navbar">
-  <div class="brand"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</div>
-  <div class="nav-links">
-    <a href="{{ url_for('views.dashboard') }}" class="{{ 'active' if request.endpoint == 'views.dashboard' }}">{{ t('dashboard', lang) }}</a>
-    <a href="{{ url_for('views.lesson_plans') }}">{{ t('nav_lesson_plans', lang) }}</a>
-    <a href="{{ url_for('views.grading') }}">{{ t('nav_grading', lang) }}</a>
-    <a href="{{ url_for('views.attendance') }}">{{ t('nav_attendance', lang) }}</a>
-    <a href="{{ url_for('views.teacher_attendance') }}">{{ t('nav_teacher_attendance', lang) }}</a>
-    <a href="{{ url_for('views.timetable') }}">{{ t('nav_timetable', lang) }}</a>
-    <a href="{{ url_for('views.reports') }}">{{ t('nav_reports', lang) }}</a>
-    <a href="{{ url_for('views.parents') }}">{{ t('nav_parents', lang) }}</a>
-    <a href="{{ url_for('views.classes') }}">{{ t('nav_classes', lang) }}</a>
-    <a href="{{ url_for('documents.documents') }}">{{ t('nav_documents', lang) }}</a>
-    <a href="{{ url_for('studio.index') }}">{{ t('nav_studio', lang) }}</a>
-    <a href="{{ url_for('study.index') }}">{{ t('nav_study', lang) }}</a>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">
+    <div class="sidebar-brand-text">
+      <span class="brand-name">{{ brand_name }}</span>
+      <span class="brand-sub">{{ brand_tagline }}</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.dashboard' }}" href="{{ url_for('views.dashboard') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-dashboard"/></svg>{{ t('dashboard', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.lesson_plans' }}" href="{{ url_for('views.lesson_plans') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plan"/></svg>{{ t('nav_lesson_plans', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.grading' }}" href="{{ url_for('views.grading') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-grade"/></svg>{{ t('nav_grading', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.attendance' }}" href="{{ url_for('views.attendance') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-attend"/></svg>{{ t('nav_attendance', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.teacher_attendance' }}" href="{{ url_for('views.teacher_attendance') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-staff"/></svg>{{ t('nav_teacher_attendance', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.timetable' }}" href="{{ url_for('views.timetable') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-time"/></svg>{{ t('nav_timetable', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.reports' }}" href="{{ url_for('views.reports') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-report"/></svg>{{ t('nav_reports', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'analytics.index' }}" href="{{ url_for('analytics.index') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-analytics"/></svg>{{ t('nav_analytics', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.parents' }}" href="{{ url_for('views.parents') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-parent"/></svg>{{ t('nav_parents', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.classes' }}" href="{{ url_for('views.classes') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-class"/></svg>{{ t('nav_classes', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'documents.documents' }}" href="{{ url_for('documents.documents') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg>{{ t('nav_documents', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'studio.index' }}" href="{{ url_for('studio.index') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-studio"/></svg>{{ t('nav_studio', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'study.index' }}" href="{{ url_for('study.index') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-study"/></svg>{{ t('nav_study', lang) }}</a>
     {% if session.get('role') == 'admin' %}
-    <a href="{{ url_for('views.settings') }}">{{ t('nav_settings', lang) }}</a>
+    <a class="nav-link {{ 'active' if request.endpoint == 'views.settings' }}" href="{{ url_for('views.settings') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-settings"/></svg>{{ t('nav_settings', lang) }}</a>
     {% endif %}
+  </nav>
+  <div class="sidebar-foot">TeachFlow 2.0</div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<header class="topbar">
+  <button class="hamburger" id="menuBtn" type="button" aria-label="Menu"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-menu"/></svg></button>
+  <div class="topbar-spacer"></div>
+  <div class="lang-switch">
+    <a class="{{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
+    <a class="{{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
+    <a class="{{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
   </div>
-  <div class="nav-right">
-    <span class="user">{{ session.get('name') }}</span>
-    <a class="lang-opt {{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
-    <a class="lang-opt {{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
-    <a class="lang-opt {{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
-    <a class="logout" href="{{ url_for('auth.logout') }}">{{ t('logout', lang) }}</a>
+  <div class="user-chip">
+    <div class="user-avatar">{{ (session.get('name') or '?')[:1] }}</div>
+    <span class="user-name">{{ session.get('name') }}</span>
   </div>
-</nav>
+  <form class="inline-form" method="post" action="{{ url_for('auth.logout') }}"><button type="submit" class="btn-logout"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-logout"/></svg>{{ t('logout', lang) }}</button></form>
+</header>
+
 {% elif session.get('parent_id') %}
-<nav class="navbar">
-  <div class="brand"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</div>
-  <div class="nav-links">
-    <a href="{{ url_for('views.parent_dashboard') }}">{{ t('nav_children', lang) }}</a>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">
+    <div class="sidebar-brand-text">
+      <span class="brand-name">{{ brand_name }}</span>
+      <span class="brand-sub">{{ t('parent_login_title', lang) }}</span>
+    </div>
   </div>
-  <div class="nav-right">
-    <span class="user">{{ session.get('parent_name') }}</span>
-    <a class="lang-opt {{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
-    <a class="lang-opt {{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
-    <a class="lang-opt {{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
-    <a class="logout" href="{{ url_for('auth.parent_logout') }}">{{ t('logout', lang) }}</a>
+  <nav class="sidebar-nav">
+    <a class="nav-link active" href="{{ url_for('views.parent_dashboard') }}"><svg class="nav-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-class"/></svg>{{ t('nav_children', lang) }}</a>
+  </nav>
+  <div class="sidebar-foot">TeachFlow 2.0</div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<header class="topbar">
+  <button class="hamburger" id="menuBtn" type="button" aria-label="Menu"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-menu"/></svg></button>
+  <div class="topbar-spacer"></div>
+  <div class="lang-switch">
+    <a class="{{ 'on' if lang == 'en' }}" href="{{ url_for('views.set_lang', code='en') }}">EN</a>
+    <a class="{{ 'on' if lang == 'ms' }}" href="{{ url_for('views.set_lang', code='ms') }}">BM</a>
+    <a class="{{ 'on' if lang == 'ta' }}" href="{{ url_for('views.set_lang', code='ta') }}">தமிழ்</a>
+  </div>
+  <div class="user-chip">
+    <div class="user-avatar">{{ (session.get('parent_name') or '?')[:1] }}</div>
+    <span class="user-name">{{ session.get('parent_name') }}</span>
+  </div>
+  <form class="inline-form" method="post" action="{{ url_for('auth.parent_logout') }}"><button type="submit" class="btn-logout"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-logout"/></svg>{{ t('logout', lang) }}</button></form>
+</header>
+{% endif %}
+
+{% if not session.get('user_id') and not session.get('parent_id') %}
+<nav class="topnav">
+  <a class="topnav-brand" href="{{ url_for('views.welcome') }}"><img src="{{ url_for('views.branding_logo') }}" class="logo" alt="{{ brand_name }}">{{ brand_name }}</a>
+  <div class="topnav-links">
+    <a href="{{ url_for('views.welcome', _anchor='about') }}">{{ t('nav_about', lang) }}</a>
+    <a href="{{ url_for('views.welcome', _anchor='features') }}">{{ t('nav_features', lang) }}</a>
+    <a href="{{ url_for('views.welcome', _anchor='product') }}">{{ t('nav_product', lang) }}</a>
+  </div>
+  <div class="topnav-actions">
+    <a class="topnav-login" href="{{ url_for('auth.login') }}">{{ t('login', lang) }}</a>
+    <a class="topnav-cta" href="{{ url_for('auth.register') }}">{{ t('get_started', lang) }}</a>
   </div>
 </nav>
 {% endif %}
 
-<main class="container">
+<main class="main">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
       <div class="flash flash-{{ cat }}">{{ t(msg, lang) }}</div>
@@ -79,6 +167,60 @@
     <button id="chatSend" type="button">{{ t('chat_send', lang) }}</button>
   </div>
 </div>
+
+<script>
+(function () {
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  if (!meta) return;
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || (form.method || '').toLowerCase() !== 'post') return;
+    if (form.querySelector('input[name="csrf_token"]')) return;
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'csrf_token';
+    input.value = meta.getAttribute('content');
+    form.appendChild(input);
+  }, true);
+})();
+</script>
+<script>
+(function () {
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  if (!meta) return;
+  var token = meta.getAttribute('content');
+  var origFetch = window.fetch;
+  window.fetch = function (url, opts) {
+    opts = opts || {};
+    var method = String(opts.method || 'GET').toUpperCase();
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+      opts.headers = opts.headers || {};
+      if (typeof Headers !== 'undefined' && opts.headers instanceof Headers) {
+        if (!opts.headers.has('X-CSRFToken')) opts.headers.set('X-CSRFToken', token);
+      } else if (!opts.headers['X-CSRFToken']) {
+        opts.headers['X-CSRFToken'] = token;
+      }
+    }
+    return origFetch.call(window, url, opts);
+  };
+})();
+</script>
+<script>
+(function () {
+  var btn = document.getElementById('menuBtn');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  if (btn && sidebar && overlay) {
+    function toggle(open) {
+      var isOpen = open !== undefined ? open : !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', isOpen);
+      overlay.classList.toggle('show', isOpen);
+    }
+    btn.addEventListener('click', function () { toggle(); });
+    overlay.addEventListener('click', function () { toggle(false); });
+  }
+})();
+</script>
 <script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

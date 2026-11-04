@@ -89,6 +89,11 @@ def set_lang(code):
     return redirect(request.referrer or url_for("views.dashboard"))
 
 
+@bp.route("/welcome")
+def welcome():
+    return render_template("welcome.html")
+
+
 # --------------------------------------------------------------------------
 # Dashboard
 # --------------------------------------------------------------------------
