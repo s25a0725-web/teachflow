@@ -63,12 +63,14 @@ def create_app():
     from studio import bp as studio_bp
     from study import bp as study_bp
     from analytics import bp as analytics_bp
+    from attendance import bp as attendance_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(studio_bp)
     app.register_blueprint(study_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(attendance_bp)
 
     @app.context_processor
     def inject_globals():

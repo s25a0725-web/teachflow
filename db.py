@@ -75,6 +75,14 @@ CREATE TABLE IF NOT EXISTS teacher_attendance (
     date TEXT NOT NULL,
     status TEXT NOT NULL,
     time TEXT,
+    check_in_time TEXT,
+    check_out_time TEXT,
+    late_minutes INTEGER,
+    source TEXT DEFAULT 'manual',
+    latitude REAL,
+    longitude REAL,
+    accuracy_m REAL,
+    verification TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     UNIQUE(teacher_id, date)
 );
@@ -220,6 +228,91 @@ CREATE TABLE IF NOT EXISTS study_items (
     content TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS school_locations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    radius_m INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS gps_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    event_date TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    accuracy_m REAL,
+    verification TEXT DEFAULT 'verified',
+    created_at TEXT NOT NULL,
+    UNIQUE(teacher_id, event_type, event_date)
+);
+
+CREATE TABLE IF NOT EXISTS mc_applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    reason TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_remark TEXT,
+    reviewed_by INTEGER,
+    reviewed_at TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS mc_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mc_application_id INTEGER NOT NULL,
+    stored_name TEXT NOT NULL,
+    original_name TEXT,
+    mime_type TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS leave_applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    leave_type TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    reason TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_remark TEXT,
+    reviewed_by INTEGER,
+    reviewed_at TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS leave_balances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    leave_type TEXT NOT NULL,
+    total_days REAL NOT NULL DEFAULT 0,
+    used_days REAL NOT NULL DEFAULT 0,
+    UNIQUE(teacher_id, leave_type)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT,
+    message TEXT NOT NULL,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    action TEXT NOT NULL,
+    details TEXT,
+    ip TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 
@@ -270,6 +363,19 @@ def init_db():
             "SELECT id, email, NULL, password_hash, name, created_at FROM parent_accounts_old"
         )
         conn.execute("DROP TABLE parent_accounts_old")
+    ta_cols = {r[1] for r in conn.execute("PRAGMA table_info(teacher_attendance)").fetchall()}
+    for col, typ in [
+        ("check_in_time", "TEXT"),
+        ("check_out_time", "TEXT"),
+        ("late_minutes", "INTEGER"),
+        ("source", "TEXT DEFAULT 'manual'"),
+        ("latitude", "REAL"),
+        ("longitude", "REAL"),
+        ("accuracy_m", "REAL"),
+        ("verification", "TEXT"),
+    ]:
+        if col not in ta_cols:
+            conn.execute(f"ALTER TABLE teacher_attendance ADD COLUMN {col} {typ}")
     conn.commit()
     conn.close()
 

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('nav_smart_attendance', lang) }}</h1>
+
+<div class="panel">
+  <div class="gps-status" id="gpsStatus"><span class="gps-dot"></span><span id="gpsText">{{ t('att_gps_searching', lang) }}</span></div>
+  <p class="muted" style="font-size:0.85rem">{{ t('att_gps_note', lang) }}</p>
+  <div class="gps-actions">
+    <button type="button" class="btn" id="checkInBtn">{{ t('att_gps_check_in', lang) }}</button>
+    <button type="button" class="btn secondary" id="checkOutBtn">{{ t('att_gps_check_out', lang) }}</button>
+  </div>
+  <div id="gpsResult" class="mt"></div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-body"><div class="num">{{ record.check_in_time or '&mdash;' }}</div><div class="label">{{ t('att_gps_check_in', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ record.check_out_time or '&mdash;' }}</div><div class="label">{{ t('att_gps_check_out', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ (record.late_minutes ~ ' min') if record and record.late_minutes is not none else '&mdash;' }}</div><div class="label">{{ t('att_late_minutes', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ t('att_' ~ record.status, lang) if record else '&mdash;' }}</div><div class="label">{{ t('att_status', lang) }}</div></div></div>
+</div>
+
+<h2>{{ t('att_history', lang) }}</h2>
+{% if history %}
+<div class="panel">
+  <table>
+    <tr><th>{{ t('date', lang) }}</th><th>{{ t('att_status', lang) }}</th><th>{{ t('att_gps_check_in', lang) }}</th><th>{{ t('att_gps_check_out', lang) }}</th><th>{{ t('att_late_minutes', lang) }}</th></tr>
+    {% for h in history %}
+    <tr>
+      <td>{{ h.date }}</td>
+      <td>{{ t('att_' ~ h.status, lang) if h.status in ['present','late','absent'] else h.status }}</td>
+      <td>{{ h.check_in_time or '&mdash;' }}</td>
+      <td>{{ h.check_out_time or '&mdash;' }}</td>
+      <td>{{ h.late_minutes if h.late_minutes is not none else '&mdash;' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+
+<h2>{{ t('att_leave_balance', lang) }}</h2>
+<div class="stats">
+  {% for lt in leave_types %}
+  <div class="stat"><div class="stat-body"><div class="num">{{ balances[lt].used if lt in balances else 0 }} / {{ balances[lt].total if lt in balances else 0 }}</div><div class="label">{{ t('att_leave_' ~ lt, lang) }}</div></div></div>
+  {% endfor %}
+</div>
+
+<h2>{{ t('att_notifications', lang) }}</h2>
+{% if notes %}
+<div class="panel">
+  <ul style="margin:0;padding-left:1.2rem">
+    {% for n in notes %}<li style="margin:0.35rem 0">{{ n.message }} <span class="muted" style="font-size:0.8rem">{{ n.created_at }}</span></li>{% endfor %}
+  </ul>
+</div>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+
+<div class="grid2">
+  <a class="card" href="{{ url_for('attendance.mc') }}"><span><strong>{{ t('att_apply_mc', lang) }}</strong><span>{{ t('att_pending_mc', lang) }}: {{ mcs|selectattr('status','equalto','pending')|list|length }}</span></span></a>
+  <a class="card" href="{{ url_for('attendance.leave') }}"><span><strong>{{ t('att_apply_leave', lang) }}</strong><span>{{ t('att_pending_leave', lang) }}: {{ leaves|selectattr('status','equalto','pending')|list|length }}</span></span></a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var gpsText = document.getElementById('gpsText');
+  var gpsStatus = document.getElementById('gpsStatus');
+  var checkInBtn = document.getElementById('checkInBtn');
+  var checkOutBtn = document.getElementById('checkOutBtn');
+  var result = document.getElementById('gpsResult');
+  function setGps(state, text) { gpsStatus.className = 'gps-status gps-' + state; gpsText.textContent = text; }
+  function show(msg, err) { result.innerHTML = '<div class="flash ' + (err ? 'flash-error' : 'flash-success') + '">' + msg + '</div>'; }
+  function refresh() {
+    setGps('searching', '{{ t('att_gps_searching', lang) }}');
+    fetch('/attendance/status').then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.configured) { setGps('failed', '{{ t('att_no_location', lang) }}'); checkInBtn.disabled = checkOutBtn.disabled = true; return; }
+      var rec = d.record;
+      if (rec && rec.check_in_time && !rec.check_out_time) setGps('verified', '{{ t('att_gps_verified', lang) }}');
+      else if (rec && rec.check_in_time && rec.check_out_time) setGps('verified', '{{ t('att_gps_verified', lang) }}');
+      else setGps('searching', '{{ t('att_gps_searching', lang) }}');
+      checkInBtn.disabled = !!(rec && rec.check_in_time);
+      checkOutBtn.disabled = !(rec && rec.check_in_time) || !!(rec && rec.check_out_time);
+    });
+  }
+  function getPos() {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) { reject({ code: 0 }); return; }
+      navigator.geolocation.getCurrentPosition(
+        function (p) { resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }); },
+        function (e) { reject(e); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    });
+  }
+  function doEvent(type) {
+    setGps('searching', '{{ t('att_gps_searching', lang) }}');
+    getPos().then(function (pos) {
+      return fetch('/attendance/' + type, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pos) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); });
+    }).then(function (res) {
+      if (res.ok && res.d.ok) {
+        var extra = res.d.late_minutes ? (' &middot; ' + res.d.late_minutes + ' min late') : (res.d.early_minutes ? (' &middot; ' + res.d.early_minutes + ' min early') : '');
+        show('&#10003; ' + res.d.time + extra, false);
+        refresh();
+      } else {
+        var m = { duplicate: 'Already recorded today', outside_geofence: 'Outside school geofence', invalid_coords: 'Invalid coordinates', low_accuracy: 'GPS accuracy too low', no_location: 'Location not configured', bad_coords: 'Could not read coordinates' };
+        show(m[res.d.error] || res.d.error, true);
+        setGps('failed', '{{ t('att_gps_failed', lang) }}');
+      }
+    }).catch(function (e) {
+      if (e && e.code === 1) { show('{{ t('att_gps_perm_required', lang) }}', true); setGps('failed', '{{ t('att_gps_perm_required', lang) }}'); }
+      else { show('{{ t('att_gps_failed', lang) }}', true); setGps('failed', '{{ t('att_gps_failed', lang) }}'); }
+    });
+  }
+  checkInBtn.addEventListener('click', function () { doEvent('check-in'); });
+  checkOutBtn.addEventListener('click', function () { doEvent('check-out'); });
+  refresh();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_admin_title', lang) }}</h1>
+<p class="muted">{{ today }}</p>
+
+<div class="stats">
+  <div class="stat"><div class="stat-body"><div class="num">{{ total }}</div><div class="label">{{ t('att_total_teachers', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ chart.counts.present }}</div><div class="label">{{ t('att_present_now', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ chart.counts.late }}</div><div class="label">{{ t('att_late_today', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ chart.counts.absent }}</div><div class="label">{{ t('att_absent_today', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ chart.counts.leave }}</div><div class="label">{{ t('att_on_leave', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-body"><div class="num">{{ chart.counts.unverified }}</div><div class="label">{{ t('att_unverified', lang) }}</div></div></div>
+</div>
+
+<div class="chart-grid">
+  <div class="panel chart-panel">
+    <h2>{{ t('analytics_trend', lang) }}</h2>
+    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="panel chart-panel">
+    <h2>{{ t('att_status', lang) }}</h2>
+    <div class="chart-box"><canvas id="countChart"></canvas></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0">{{ t('att_pending_mc', lang) }}: {{ pending_mc }} &middot; {{ t('att_pending_leave', lang) }}: {{ pending_leave }}</h2>
+  <table>
+    <tr><th>{{ t('name', lang) }}</th><th>{{ t('att_status', lang) }}</th><th>{{ t('att_late_minutes', lang) }}</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>
+        {% if r.state == 'present' %}{{ t('att_on_time', lang) }}{% elif r.state == 'late' %}{{ t('att_late_today', lang) }}{% elif r.state == 'absent' %}{{ t('att_absent_today', lang) }}{% elif r.state == 'leave' %}{{ t('att_on_leave', lang) }}{% else %}{{ t('att_unverified', lang) }}{% endif %}
+      </td>
+      <td>{{ r.late_minutes if r.late_minutes is not none else '&mdash;' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="grid2">
+  <a class="card" href="{{ url_for('attendance.mc') }}"><span><strong>{{ t('att_apply_mc', lang) }}</strong><span>{{ t('att_pending_mc', lang) }}: {{ pending_mc }}</span></span></a>
+  <a class="card" href="{{ url_for('attendance.leave') }}"><span><strong>{{ t('att_apply_leave', lang) }}</strong><span>{{ t('att_pending_leave', lang) }}: {{ pending_leave }}</span></span></a>
+  <a class="card" href="{{ url_for('attendance.report') }}"><span><strong>{{ t('att_report', lang) }}</strong><span>PDF / Excel</span></span></a>
+  <a class="card" href="{{ url_for('attendance.settings') }}"><span><strong>{{ t('att_settings', lang) }}</strong><span>GPS &amp; times</span></span></a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='chart.umd.js') }}"></script>
+<script>
+(function () {
+  if (typeof Chart === 'undefined') return;
+  var chart = {{ chart|tojson }};
+  Chart.defaults.color = '#93a1bd';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+  Chart.defaults.font.family = 'Inter, Segoe UI, sans-serif';
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: chart.dates, datasets: [
+      { label: '{{ t('att_present_now', lang) }}', data: chart.present, borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.12)', fill: true, tension: 0.4, borderWidth: 2 },
+      { label: '{{ t('att_late_today', lang) }}', data: chart.late, borderColor: '#fb7185', backgroundColor: 'rgba(251,113,133,0.1)', fill: true, tension: 0.4, borderWidth: 2 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+  new Chart(document.getElementById('countChart'), {
+    type: 'doughnut',
+    data: { labels: ['{{ t('att_on_time', lang) }}','{{ t('att_late_today', lang) }}','{{ t('att_absent_today', lang) }}','{{ t('att_on_leave', lang) }}','{{ t('att_unverified', lang) }}'],
+      datasets: [{ data: [chart.counts.present, chart.counts.late, chart.counts.absent, chart.counts.leave, chart.counts.unverified],
+        backgroundColor: ['#34d399','#fbbf24','#fb7185','#8b5cf6','#94a3b8'], borderWidth: 0, hoverOffset: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+  });
+})();
+</script>
+{% endblock %}

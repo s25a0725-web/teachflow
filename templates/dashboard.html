@@ -24,34 +24,16 @@
 
 <h2>{{ t('quick_actions', lang) }}</h2>
 <div class="cards">
-  <a class="card" href="{{ url_for('views.lesson_plans') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plan"/></svg></span>
-    <span><strong>{{ t('nav_lesson_plans', lang) }}</strong><span>Auto-generate a structured plan from a topic.</span></span>
+  <a class="card" href="{{ url_for('attendance.index') }}">
+    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-staff"/></svg></span>
+    <span><strong>{{ t('nav_attendance', lang) }}</strong><span>GPS check-in and live attendance dashboard.</span></span>
   </a>
-  <a class="card" href="{{ url_for('views.grading') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-grade"/></svg></span>
-    <span><strong>{{ t('nav_grading', lang) }}</strong><span>Mark assignments and auto-suggest feedback.</span></span>
+  {% if session.get('role') == 'admin' %}
+  <a class="card" href="{{ url_for('attendance.settings') }}">
+    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-settings"/></svg></span>
+    <span><strong>{{ t('att_settings', lang) }}</strong><span>Configure school location, geofence and times.</span></span>
   </a>
-  <a class="card" href="{{ url_for('views.attendance') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-attend"/></svg></span>
-    <span><strong>{{ t('nav_attendance', lang) }}</strong><span>Mark attendance in one click per class.</span></span>
-  </a>
-  <a class="card" href="{{ url_for('views.timetable') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-time"/></svg></span>
-    <span><strong>{{ t('nav_timetable', lang) }}</strong><span>Keep your weekly schedule.</span></span>
-  </a>
-  <a class="card" href="{{ url_for('views.reports') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-report"/></svg></span>
-    <span><strong>{{ t('nav_reports', lang) }}</strong><span>Generate student progress reports.</span></span>
-  </a>
-  <a class="card" href="{{ url_for('views.parents') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-parent"/></svg></span>
-    <span><strong>{{ t('nav_parents', lang) }}</strong><span>Write parent messages from reports.</span></span>
-  </a>
-  <a class="card" href="{{ url_for('documents.documents') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></span>
-    <span><strong>{{ t('nav_documents', lang) }}</strong><span>Upload, summarize, edit and e-sign documents.</span></span>
-  </a>
+  {% endif %}
 </div>
 {% endblock %}
 

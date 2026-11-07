@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_report', lang) }}</h1>
+
+<div class="panel">
+  <form method="get" class="form-row">
+    <div>
+      <label>{{ t('att_status', lang) }}</label>
+      <select name="period" onchange="this.form.submit()">
+        <option value="daily" {{ 'selected' if period == 'daily' }}>Daily</option>
+        <option value="weekly" {{ 'selected' if period == 'weekly' }}>Weekly</option>
+        <option value="monthly" {{ 'selected' if period == 'monthly' }}>Monthly</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>{{ t('att_export', lang) }}</h2>
+  <form method="post" action="{{ url_for('attendance.report_export') }}" class="form-row">
+    <input type="hidden" name="period" value="{{ period }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div><button type="submit" name="format" value="xlsx">Excel (.xlsx)</button></div>
+    <div><button type="submit" name="format" value="pdf" class="secondary">PDF</button></div>
+  </form>
+</div>
+
+{% if rows %}
+<div class="panel">
+  <table>
+    <tr><th>{{ t('date', lang) }}</th><th>{{ t('name', lang) }}</th><th>{{ t('att_status', lang) }}</th><th>{{ t('att_gps_check_in', lang) }}</th><th>{{ t('att_gps_check_out', lang) }}</th><th>{{ t('att_late_minutes', lang) }}</th><th>Source</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.date }}</td><td>{{ r.teacher }}</td>
+      <td>{{ t('att_' ~ r.status, lang) if r.status in ['present','late','absent'] else r.status }}</td>
+      <td>{{ r.check_in or '&mdash;' }}</td><td>{{ r.check_out or '&mdash;' }}</td>
+      <td>{{ r.late_minutes if r.late_minutes is not none else '&mdash;' }}</td>
+      <td>{{ r.source }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

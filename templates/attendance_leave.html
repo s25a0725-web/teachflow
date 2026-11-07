@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_apply_leave', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('att_apply_leave', lang) }}</h2>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div><label>{{ t('att_leave_type', lang) }}</label>
+        <select name="leave_type">
+          {% for lt in leave_types %}<option value="{{ lt }}">{{ t('att_leave_' ~ lt, lang) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label>{{ t('att_start_date', lang) }}</label><input type="date" name="start_date" required></div>
+      <div><label>{{ t('att_end_date', lang) }}</label><input type="date" name="end_date" required></div>
+    </div>
+    <label>{{ t('att_reason', lang) }}</label>
+    <textarea name="reason" rows="3"></textarea>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+{% if not is_admin %}
+<h2>{{ t('att_leave_balance', lang) }}</h2>
+<div class="stats">
+  {% for lt in leave_types %}
+  <div class="stat"><div class="stat-body"><div class="num">{{ balances[lt].used if lt in balances else 0 }} / {{ balances[lt].total if lt in balances else 0 }}</div><div class="label">{{ t('att_leave_' ~ lt, lang) }}</div></div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>{{ t('att_status', lang) }}</h2>
+{% if apps %}
+<div class="panel">
+  <table>
+    <tr><th>{{ t('name', lang) }}</th><th>{{ t('att_leave_type', lang) }}</th><th>{{ t('att_start_date', lang) }}</th><th>{{ t('att_end_date', lang) }}</th><th>{{ t('att_status', lang) }}</th><th>{{ t('att_remark', lang) }}</th><th></th></tr>
+    {% for a in apps %}
+    <tr>
+      <td>{{ a.teacher_name if is_admin else session.get('name') }}</td>
+      <td>{{ t('att_leave_' ~ a.leave_type, lang) }}</td>
+      <td>{{ a.start_date }}</td>
+      <td>{{ a.end_date }}</td>
+      <td>{{ t('att_' ~ a.status, lang) }}</td>
+      <td>{{ a.admin_remark or '&mdash;' }}</td>
+      <td>
+        {% if is_admin and a.status == 'pending' %}
+        <form class="inline-form" method="post" action="{{ url_for('attendance.leave_review', lid=a.id) }}">
+          <input type="hidden" name="status" value="approved"><input type="hidden" name="remark" value="">
+          <button class="small" type="submit">{{ t('att_approve', lang) }}</button>
+        </form>
+        <form class="inline-form" method="post" action="{{ url_for('attendance.leave_review', lid=a.id) }}">
+          <input type="hidden" name="status" value="rejected"><input type="hidden" name="remark" value="">
+          <button class="danger small" type="submit">{{ t('att_reject', lang) }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

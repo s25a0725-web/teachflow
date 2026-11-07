@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_apply_mc', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('att_apply_mc', lang) }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div><label>{{ t('att_start_date', lang) }}</label><input type="date" name="start_date" required></div>
+      <div><label>{{ t('att_end_date', lang) }}</label><input type="date" name="end_date" required></div>
+    </div>
+    <label>{{ t('att_reason', lang) }}</label>
+    <textarea name="reason" rows="3"></textarea>
+    <label>{{ t('att_document', lang) }}</label>
+    <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" required>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<h2>{{ t('att_status', lang) }}</h2>
+{% if apps %}
+<div class="panel">
+  <table>
+    <tr><th>{{ t('name', lang) }}</th><th>{{ t('att_start_date', lang) }}</th><th>{{ t('att_end_date', lang) }}</th><th>{{ t('att_status', lang) }}</th><th>{{ t('att_remark', lang) }}</th><th></th></tr>
+    {% for a in apps %}
+    <tr>
+      <td>{{ a.teacher_name if is_admin else session.get('name') }}</td>
+      <td>{{ a.start_date }}</td>
+      <td>{{ a.end_date }}</td>
+      <td>{{ t('att_' ~ a.status, lang) }}</td>
+      <td>{{ a.admin_remark or '&mdash;' }}</td>
+      <td>
+        {% if a.n_docs %}<a class="btn secondary small" href="{{ url_for('attendance.mc_file', mcid=a.id) }}" target="_blank">{{ t('doc_open', lang) }}</a>{% endif %}
+        {% if is_admin and a.status == 'pending' %}
+        <form class="inline-form" method="post" action="{{ url_for('attendance.mc_review', mcid=a.id) }}">
+          <input type="hidden" name="status" value="approved">
+          <input type="hidden" name="remark" value="">
+          <button class="small" type="submit">{{ t('att_approve', lang) }}</button>
+        </form>
+        <form class="inline-form" method="post" action="{{ url_for('attendance.mc_review', mcid=a.id) }}">
+          <input type="hidden" name="status" value="rejected">
+          <input type="hidden" name="remark" value="">
+          <button class="danger small" type="submit">{{ t('att_reject', lang) }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p class="muted">{{ t('no_results', lang) }}</p>
+{% endif %}
+{% endblock %}

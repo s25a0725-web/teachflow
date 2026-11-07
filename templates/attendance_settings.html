@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('att_settings', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('att_settings', lang) }}</h2>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>{{ t('att_location_name', lang) }}</label>
+    <input name="location_name" value="{{ location_name }}" placeholder="SJK(T) Sepang">
+    <div class="form-row">
+      <div><label>{{ t('att_latitude', lang) }}</label><input name="latitude" value="{{ latitude }}" placeholder="2.6810"></div>
+      <div><label>{{ t('att_longitude', lang) }}</label><input name="longitude" value="{{ longitude }}" placeholder="101.7500"></div>
+      <div><label>{{ t('att_radius', lang) }}</label>
+        <select name="radius">
+          {% for r in [50, 100, 200, 500] %}<option value="{{ r }}" {{ 'selected' if radius == r }}>{{ r }}m</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>{{ t('att_start', lang) }}</label><input type="time" name="start_time" value="{{ start_time }}"></div>
+      <div><label>{{ t('att_grace', lang) }}</label><input type="number" name="grace_minutes" value="{{ grace_minutes }}" min="0"></div>
+      <div><label>{{ t('att_end', lang) }}</label><input type="time" name="end_time" value="{{ end_time }}"></div>
+      <div><label>{{ t('att_deadline', lang) }}</label><input type="time" name="absent_deadline" value="{{ absent_deadline }}"></div>
+    </div>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<p class="muted">{{ t('att_gps_note', lang) }}</p>
+{% endblock %}

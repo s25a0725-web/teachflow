@@ -814,6 +814,16 @@ body::after {
   .hero-title { font-size: 2rem; }
 }
 
+/* Smart attendance */
+.gps-status { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.6rem; }
+.gps-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.gps-verified { color: #34d399; } .gps-verified .gps-dot { background: #34d399; box-shadow: 0 0 10px #34d399; }
+.gps-searching { color: #fbbf24; } .gps-searching .gps-dot { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; animation: gps-pulse 1.2s infinite; }
+.gps-failed { color: #fb7185; } .gps-failed .gps-dot { background: #fb7185; box-shadow: 0 0 10px #fb7185; }
+.gps-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.gps-actions .btn { margin-top: 0; }
+@keyframes gps-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
 /* ==========================================================================
    Print
    ========================================================================== */
