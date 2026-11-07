@@ -129,6 +129,28 @@ def _grace_minutes():
         return 5
 
 
+def _max_accuracy():
+    try:
+        return int(get_setting("max_accuracy_m") or 50)
+    except ValueError:
+        return 50
+
+
+def _validate_location(lat, lon, acc):
+    """Return (distance_m, error). error is None when the location is valid."""
+    loc = _school_location()
+    if loc is None:
+        return None, "no_location"
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+        return None, "invalid_coords"
+    if acc is not None and acc > _max_accuracy():
+        return None, "low_accuracy"
+    dist = _haversine(loc["latitude"], loc["longitude"], lat, lon)
+    if dist > loc["radius_m"]:
+        return None, "outside_geofence"
+    return dist, None
+
+
 def _leave_balances(uid):
     db = get_db()
     rows = db.execute("SELECT * FROM leave_balances WHERE teacher_id=?", (uid,)).fetchall()
@@ -160,6 +182,7 @@ def settings():
         set_setting("grace_minutes", request.form.get("grace_minutes", "5").strip() or "5")
         set_setting("school_end", request.form.get("end_time", "13:30").strip() or "13:30")
         set_setting("absent_deadline", request.form.get("absent_deadline", "09:00").strip() or "09:00")
+        set_setting("max_accuracy_m", request.form.get("max_accuracy_m", "50").strip() or "50")
         _audit(session["user_id"], "attendance_settings_updated")
         flash("settings_saved", "success")
         return redirect(url_for("attendance.settings"))
@@ -172,6 +195,7 @@ def settings():
         radius=loc["radius_m"] if loc else 100,
         start_time=_start_time(), grace_minutes=_grace_minutes(),
         end_time=_end_time(), absent_deadline=get_setting("absent_deadline") or "09:00",
+        max_accuracy=_max_accuracy(), has_location=loc is not None,
     )
 
 
@@ -180,9 +204,6 @@ def settings():
 # --------------------------------------------------------------------------
 def _record_event(event_type):
     uid = session["user_id"]
-    loc = _school_location()
-    if loc is None:
-        return jsonify({"error": "no_location"}), 400
     data = request.get_json(silent=True) or {}
     try:
         lat = float(data.get("latitude"))
@@ -195,15 +216,10 @@ def _record_event(event_type):
     except (TypeError, ValueError):
         acc = None
 
-    # Basic sanity / spoofing heuristics (best-effort in a browser)
-    if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
-        return jsonify({"error": "invalid_coords"}), 400
-    if acc is not None and acc > 1000:
-        return jsonify({"error": "low_accuracy"}), 400
-
-    dist = _haversine(loc["latitude"], loc["longitude"], lat, lon)
-    if dist > loc["radius_m"]:
-        return jsonify({"error": "outside_geofence", "distance_m": round(dist, 1)}), 400
+    dist, err = _validate_location(lat, lon, acc)
+    if err:
+        return jsonify({"error": err, "distance_m": round(dist, 1) if dist is not None else None,
+                        "accuracy_req": _max_accuracy()}), 400
 
     now = _now()
     today = now.strftime("%Y-%m-%d")
@@ -281,6 +297,29 @@ def check_in():
 @login_required
 def check_out():
     return _record_event("check_out")
+
+
+@bp.route("/test-location", methods=["POST"])
+@login_required
+def test_location():
+    data = request.get_json(silent=True) or {}
+    try:
+        lat = float(data.get("latitude"))
+        lon = float(data.get("longitude"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "bad_coords"}), 400
+    acc = data.get("accuracy")
+    try:
+        acc = float(acc) if acc is not None else None
+    except (TypeError, ValueError):
+        acc = None
+    dist, err = _validate_location(lat, lon, acc)
+    if err:
+        return jsonify({"ok": False, "error": err,
+                        "distance_m": round(dist, 1) if dist is not None else None,
+                        "accuracy": acc, "accuracy_req": _max_accuracy()})
+    return jsonify({"ok": True, "within": True, "distance_m": round(dist, 1),
+                    "accuracy": acc, "accuracy_req": _max_accuracy()})
 
 
 @bp.route("/status")

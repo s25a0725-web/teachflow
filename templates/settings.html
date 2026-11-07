@@ -3,6 +3,12 @@
 <h1>{{ t('settings_title', lang) }}</h1>
 
 <div class="panel">
+  <h2>{{ t('att_settings', lang) }}</h2>
+  <p class="muted">{{ t('att_gps_note', lang) }}</p>
+  <a class="btn" href="{{ url_for('attendance.settings') }}">{{ t('att_settings', lang) }} → GPS &amp; geofence</a>
+</div>
+
+<div class="panel">
   <h2>{{ t('settings_branding', lang) }}</h2>
   <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="action" value="branding">

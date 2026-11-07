@@ -9,13 +9,14 @@
     <label>{{ t('att_location_name', lang) }}</label>
     <input name="location_name" value="{{ location_name }}" placeholder="SJK(T) Sepang">
     <div class="form-row">
-      <div><label>{{ t('att_latitude', lang) }}</label><input name="latitude" value="{{ latitude }}" placeholder="2.6810"></div>
-      <div><label>{{ t('att_longitude', lang) }}</label><input name="longitude" value="{{ longitude }}" placeholder="101.7500"></div>
+      <div><label>{{ t('att_latitude', lang) }}</label><input name="latitude" id="lat" value="{{ latitude }}" placeholder="2.6810"></div>
+      <div><label>{{ t('att_longitude', lang) }}</label><input name="longitude" id="lng" value="{{ longitude }}" placeholder="101.7500"></div>
       <div><label>{{ t('att_radius', lang) }}</label>
         <select name="radius">
           {% for r in [50, 100, 200, 500] %}<option value="{{ r }}" {{ 'selected' if radius == r }}>{{ r }}m</option>{% endfor %}
         </select>
       </div>
+      <div><label>{{ t('att_accuracy_req', lang) }}</label><input type="number" name="max_accuracy_m" value="{{ max_accuracy }}" min="5" max="1000"></div>
     </div>
     <div class="form-row">
       <div><label>{{ t('att_start', lang) }}</label><input type="time" name="start_time" value="{{ start_time }}"></div>
@@ -27,5 +28,68 @@
   </form>
 </div>
 
+<div class="panel">
+  <h2>{{ t('att_map_preview', lang) }}</h2>
+  <div class="gps-actions">
+    <button type="button" class="secondary" id="useLoc">{{ t('att_use_location', lang) }}</button>
+    <button type="button" id="testGps">{{ t('att_test_gps', lang) }}</button>
+  </div>
+  <div id="testResult" class="mt"></div>
+  <div class="mt"><iframe id="mapFrame" width="100%" height="360" frameborder="0" style="border:1px solid var(--border);border-radius:12px" title="{{ t('att_map_preview', lang) }}"></iframe></div>
+  <p class="muted" style="font-size:0.85rem">{{ t('att_map_hint', lang) }}</p>
+</div>
+
 <p class="muted">{{ t('att_gps_note', lang) }}</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
+  function updateMap() {
+    var lat = num(document.getElementById('lat').value) || 3.1390;
+    var lon = num(document.getElementById('lng').value) || 101.6869;
+    var d = 0.004;
+    var src = 'https://www.openstreetmap.org/export/embed.html?bbox=' +
+      (lon - d) + ',' + (lat - d) + ',' + (lon + d) + ',' + (lat + d) +
+      '&layer=mapnik&marker=' + lat + ',' + lon;
+    document.getElementById('mapFrame').src = src;
+  }
+  document.getElementById('lat').addEventListener('input', updateMap);
+  document.getElementById('lng').addEventListener('input', updateMap);
+  updateMap();
+
+  function geoError() { return '{{ t('att_gps_perm_required', lang) }}'; }
+
+  document.getElementById('useLoc').addEventListener('click', function () {
+    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+      document.getElementById('lat').value = p.coords.latitude.toFixed(6);
+      document.getElementById('lng').value = p.coords.longitude.toFixed(6);
+      updateMap();
+    }, function () { alert(geoError()); });
+  });
+
+  document.getElementById('testGps').addEventListener('click', function () {
+    var el = document.getElementById('testResult');
+    if (!navigator.geolocation) { el.innerHTML = '<div class="flash flash-error">Geolocation not supported</div>'; return; }
+    el.innerHTML = '<div class="flash flash-success">{{ t('att_gps_searching', lang) }}…</div>';
+    navigator.geolocation.getCurrentPosition(function (p) {
+      fetch('/attendance/test-location', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy }) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            el.innerHTML = '<div class="flash flash-success">{{ t('att_test_inside', lang) }} — ' + d.distance_m + 'm · accuracy ' + Math.round(d.accuracy) + 'm</div>';
+          } else {
+            var msg = { outside_geofence: '{{ t('att_test_outside', lang) }}', low_accuracy: 'Accuracy too low (need ≤ ' + d.accuracy_req + 'm)', invalid_coords: 'Invalid coordinates', no_location: '{{ t('att_no_location', lang) }}' }[d.error] || d.error;
+            var dist = d.distance_m != null ? (' (' + d.distance_m + 'm)') : '';
+            el.innerHTML = '<div class="flash flash-error">' + msg + dist + '</div>';
+          }
+        });
+    }, function () { el.innerHTML = '<div class="flash flash-error">' + geoError() + '</div>'; },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  });
+})();
+</script>
 {% endblock %}
