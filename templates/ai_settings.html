@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ t('ai_settings', lang) }}</h1>
+
+<div class="panel">
+  <h2>{{ t('ai_settings', lang) }}</h2>
+  {% if configured %}
+    <div class="flash flash-success">✓ {{ t('ai_title', lang) }}: {{ model_name }}</div>
+  {% else %}
+    <div class="flash flash-error">{{ t('ai_no_key', lang) }}</div>
+  {% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>{{ t('ai_configure_key', lang) }}</label>
+    <input type="password" name="api_key" value="" placeholder="sk-…" autocomplete="off">
+    {% if has_key %}<p class="muted">A key is already saved. Leave blank to keep it.</p>{% endif %}
+    <label>{{ t('ai_model', lang) }}</label>
+    <input type="text" name="model" value="{{ model_name }}" placeholder="deepseek-chat">
+    <label>{{ t('ai_daily_limit', lang) }}</label>
+    <input type="number" name="daily_limit" value="{{ daily_limit }}" min="1">
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+  <p class="muted">{{ t('ai_key_saved_hint', lang) }}</p>
+  <p class="muted">Environment variables (DEEPSEEK_API_KEY / DEEPSEEK_MODEL) take priority over the value saved here.</p>
+</div>
+{% endblock %}

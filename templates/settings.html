@@ -9,6 +9,12 @@
 </div>
 
 <div class="panel">
+  <h2>{{ t('ai_title', lang) }}</h2>
+  <p class="muted">{{ t('ai_key_saved_hint', lang) }}</p>
+  <a class="btn" href="{{ url_for('ai.settings') }}">{{ t('ai_settings', lang) }} → API key &amp; model</a>
+</div>
+
+<div class="panel">
   <h2>{{ t('settings_branding', lang) }}</h2>
   <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="action" value="branding">

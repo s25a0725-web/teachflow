@@ -64,6 +64,7 @@ def create_app():
     from study import bp as study_bp
     from analytics import bp as analytics_bp
     from attendance import bp as attendance_bp
+    from ai import bp as ai_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
@@ -71,6 +72,7 @@ def create_app():
     app.register_blueprint(study_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(attendance_bp)
+    app.register_blueprint(ai_bp)
 
     @app.context_processor
     def inject_globals():
@@ -87,7 +89,7 @@ def create_app():
 
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
-        if request.is_json or request.path.startswith(("/chatbot", "/studio", "/study")):
+        if request.is_json or request.path.startswith(("/chatbot", "/studio", "/study", "/ai")):
             return jsonify({"error": "csrf"}), 400
         flash("csrf_failed", "error")
         return redirect(request.referrer or url_for("auth.login"))
