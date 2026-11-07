@@ -139,24 +139,6 @@
 
 {% block scripts %}{% endblock %}
 
-<button id="chatToggle" class="chat-toggle" type="button"><img src="{{ url_for('static', filename='robot-white.svg') }}" class="robot-icon" alt="Chat"></button>
-<div id="chatPanel" class="chat-panel hidden" data-lang="{{ lang }}" data-greeting="{{ t('chat_greeting', lang) }}" data-download="{{ t('doc_download', lang) }}">
-  <div class="chat-header">
-    <div class="chat-header-title">
-      <img src="{{ url_for('static', filename='robot-white.svg') }}" class="robot-avatar" alt="">
-      <span>{{ t('chat_title', lang) }}</span>
-    </div>
-    <button id="chatClose" class="chat-close" type="button">&times;</button>
-  </div>
-  <div id="chatMessages" class="chat-messages"></div>
-  <div class="chat-input">
-    <button id="chatAttach" class="chat-attach" type="button" title="{{ t('chat_attach', lang) }}">📎</button>
-    <input type="file" id="chatFile" style="display:none">
-    <input id="chatText" type="text" placeholder="{{ t('chat_placeholder', lang) }}">
-    <button id="chatSend" type="button">{{ t('chat_send', lang) }}</button>
-  </div>
-</div>
-
 <script>
 (function () {
   var meta = document.querySelector('meta[name="csrf-token"]');
@@ -210,6 +192,5 @@
   }
 })();
 </script>
-<script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>
