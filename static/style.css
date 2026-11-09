@@ -828,7 +828,7 @@ body::after {
    Print
    ========================================================================== */
 @media print {
-  .sidebar, .topbar, .bg-grid, .glow, .chat-toggle, .chat-panel, .sidebar-overlay,
+  .sidebar, .topbar, .bg-grid, .glow, .wave, .wave-line, #fx, .chat-toggle, .chat-panel, .sidebar-overlay,
   button, .btn, .no-print { display: none !important; }
   body { background: #fff !important; color: #000; }
   .main { margin: 0 !important; max-width: 100%; padding: 0; }
@@ -837,4 +837,112 @@ body::after {
   .panel { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; background: #fff; }
   table, th, td { color: #000; border-color: #ccc; background: #fff !important; }
   .stat .num, .card strong, .doc-name { color: #000; }
+}
+
+/* ==========================================================================
+   Futuristic neon-wave enhancement (global)
+   ========================================================================== */
+.glow-d {
+  width: 460px; height: 460px;
+  top: 6%; left: 40%;
+  background: radial-gradient(circle, var(--glow-b), transparent 70%);
+  opacity: 0.5;
+  animation: drift-b 34s ease-in-out infinite reverse;
+}
+
+/* Soft neon aurora waves */
+.wave {
+  position: fixed; left: -20%; width: 140%; height: 260px;
+  z-index: -2; pointer-events: none;
+  filter: blur(70px); opacity: 0.45;
+  will-change: transform;
+}
+.wave-a {
+  top: 10%;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.5), rgba(139,92,246,0.4), transparent);
+  animation: wave-a 18s ease-in-out infinite;
+}
+.wave-b {
+  bottom: 6%;
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), rgba(34,211,238,0.35), transparent);
+  animation: wave-b 24s ease-in-out infinite;
+}
+.wave-c {
+  top: 44%;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.32), rgba(59,130,246,0.4), transparent);
+  opacity: 0.3;
+  animation: wave-a 30s ease-in-out infinite reverse;
+}
+@keyframes wave-a { 0%,100% { transform: translateX(-4%) translateY(0) rotate(-1.5deg); } 50% { transform: translateX(4%) translateY(-22px) rotate(1.5deg); } }
+@keyframes wave-b { 0%,100% { transform: translateX(4%) translateY(0) rotate(1.5deg); } 50% { transform: translateX(-4%) translateY(20px) rotate(-1.5deg); } }
+
+/* Crisp neon sine-wave line */
+.wave-line {
+  position: fixed; left: 0; right: 0; bottom: 2%;
+  width: 100%; height: 200px; z-index: -2; pointer-events: none;
+  opacity: 0.5;
+}
+.wave-line path {
+  fill: none; stroke: #3b82f6; stroke-width: 2;
+  stroke-dasharray: 12 9;
+  filter: drop-shadow(0 0 8px rgba(59,130,246,0.8)) drop-shadow(0 0 18px rgba(139,92,246,0.5));
+  animation: wave-line-dash 6s linear infinite;
+}
+@keyframes wave-line-dash { to { stroke-dashoffset: -420; } }
+
+/* Particle canvas */
+#fx { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+
+/* Hamburger always available (desktop collapse toggle) */
+.hamburger { display: flex; }
+
+/* Neon purple active nav indicator + glowing icons */
+.nav-link.active {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(139,92,246,0.28), rgba(99,102,241,0.12));
+  border-color: rgba(168,85,247,0.4);
+  box-shadow: inset 3px 0 0 #a855f7, 0 0 18px rgba(139,92,246,0.35);
+  text-shadow: 0 0 12px rgba(255,255,255,0.5);
+}
+.nav-link.active .nav-ico { color: #c4b5fd; filter: drop-shadow(0 0 6px rgba(168,85,247,0.8)); }
+.nav-ico { transition: filter 0.2s ease, color 0.2s ease; }
+.nav-link:hover .nav-ico { filter: drop-shadow(0 0 6px rgba(96,165,250,0.7)); }
+
+/* Sidebar user profile */
+.sidebar-foot { padding: 0.7rem 0.9rem; }
+.side-user { display: flex; align-items: center; gap: 0.65rem; }
+.side-user-avatar {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1rem; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 6px 16px rgba(99,102,241,0.45);
+}
+.side-user-info { display: flex; flex-direction: column; min-width: 0; }
+.side-user-name { font-size: 0.86rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-user-role { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+/* Collapsible sidebar (desktop icon-only) */
+body.sidebar-collapsed .sidebar { width: 76px; }
+body.sidebar-collapsed .sidebar-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+body.sidebar-collapsed .sidebar-brand-text { display: none; }
+body.sidebar-collapsed .nav-link { justify-content: center; padding: 0.62rem; font-size: 0; }
+body.sidebar-collapsed .nav-link .nav-ico { width: 22px; height: 22px; }
+body.sidebar-collapsed .side-user-info { display: none; }
+body.sidebar-collapsed .side-user { justify-content: center; }
+body.sidebar-collapsed .main,
+body.sidebar-collapsed .topbar { margin-left: 76px; }
+
+/* Glowing gradient buttons (enhanced) */
+button, .btn {
+  box-shadow: 0 8px 22px rgba(59,130,246,0.35), 0 0 0 1px rgba(139,92,246,0.18);
+}
+button:hover, .btn:hover {
+  box-shadow: 0 12px 30px rgba(99,102,241,0.55), 0 0 22px rgba(168,85,247,0.35);
+}
+
+/* Glass panels with neon edge */
+.panel {
+  border-color: rgba(129, 150, 210, 0.16);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.45), 0 0 30px rgba(99,102,241,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
 }

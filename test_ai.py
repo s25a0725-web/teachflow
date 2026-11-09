@@ -38,8 +38,18 @@ c.post("/login", data={"email": "admin@ai.com", "password": "secret123"})
 r = c.get("/ai/")
 html = r.get_data(as_text=True)
 ok("ai page renders", r.status_code == 200, r.status_code)
-ok("ai shell present", "ai-shell" in html)
-ok("tools injected", "ai_lesson_planner" in html or "Lesson Planner" in html)
+ok("ai app present", "ai-app" in html)
+ok("tools injected", "Lesson Planner" in html)
+
+# --- regression: every el.<name> referenced via addEventListener must be defined in the el map ---
+import re
+_m = re.search(r'<script>\s*(\(function.*?)</script>', html, re.S)
+_script = _m.group(1) if _m else ""
+_defined = set(re.findall(r'\b(\w+):\s*\$\(', _script))
+_used = set(re.findall(r'el\.(\w+)\.addEventListener', _script))
+_missing = _used - _defined
+ok("every el.* element is mapped (no missing DOM refs)", not _missing, _missing)
+ok("newChatBtn mapped", "newChatBtn" in _defined)
 
 r = c.get("/ai/api/status").get_json()
 ok("status not configured without key", r["configured"] is False, r)

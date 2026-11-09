@@ -1,113 +1,55 @@
 {% extends "base.html" %}
 {% block title %}{{ t('ai_title', lang) }} · {{ brand_name }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ai.css') }}">
+{% endblock %}
 {% block content %}
-<style>
-.ai-shell{display:flex;gap:14px;height:calc(100vh - 130px);min-height:520px;margin:-6px -6px 0}
-.ai-side{width:270px;flex:0 0 270px;display:flex;flex-direction:column;gap:10px;background:rgba(17,24,39,.55);border:1px solid var(--border);border-radius:14px;padding:12px;backdrop-filter:blur(12px);overflow:hidden}
-.ai-main{flex:1;display:flex;flex-direction:column;gap:10px;background:rgba(17,24,39,.35);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:relative}
-.ai-side h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 2px 2px}
-.ai-new{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(99,102,241,.4);background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(168,85,247,.22));color:#fff;font-weight:600;cursor:pointer;font-size:.9rem}
-.ai-new:hover{filter:brightness(1.15)}
-.ai-search{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:#fff;font-size:.85rem}
-.ai-search::placeholder{color:var(--muted)}
-.ai-tools-list,.ai-conv-list{overflow-y:auto;display:flex;flex-direction:column;gap:4px}
-.ai-conv-list{flex:1}
-.ai-tool{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:var(--text);cursor:pointer;font-size:.86rem;text-align:left}
-.ai-tool:hover{background:rgba(99,102,241,.12)}
-.ai-tool.on{background:rgba(99,102,241,.22);color:#fff}
-.ai-tool svg{width:16px;height:16px;flex:0 0 16px;color:var(--accent)}
-.ai-conv{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:9px;cursor:pointer;font-size:.85rem;color:var(--text)}
-.ai-conv:hover{background:rgba(255,255,255,.06)}
-.ai-conv.on{background:rgba(99,102,241,.18)}
-.ai-conv .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ai-conv .acts{display:none;gap:2px}
-.ai-conv:hover .acts{display:flex}
-.ai-conv .acts button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:2px 4px}
-.ai-conv .acts button:hover{color:#fff}
-.ai-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);min-height:52px}
-.ai-header .title{font-weight:600;font-size:1rem}
-.ai-header .model{font-size:.75rem;color:var(--muted)}
-.ai-nokey{margin:0 16px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:#fbbf24;font-size:.85rem}
-.ai-nokey a{color:#fff;text-decoration:underline}
-.ai-messages{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
-.ai-empty{margin:auto;text-align:center;color:var(--muted);max-width:420px}
-.ai-empty .big{font-size:1.6rem;margin-bottom:8px}
-.msg{max-width:78%;padding:11px 14px;border-radius:14px;line-height:1.55;font-size:.93rem;word-wrap:break-word;white-space:pre-wrap}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-bottom-right-radius:4px}
-.msg.ai{align-self:flex-start;background:rgba(30,41,59,.8);border:1px solid var(--border);border-bottom-left-radius:4px;white-space:normal}
-.msg .md{white-space:normal}
-.msg .md pre{background:rgba(0,0,0,.35);padding:10px;border-radius:8px;overflow-x:auto;white-space:pre;font-size:.82rem;margin:8px 0}
-.msg .md code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:5px;font-size:.85em}
-.msg .md pre code{background:none;padding:0}
-.msg .md h1,.msg .md h2,.msg .md h3{margin:8px 0 4px;line-height:1.3}
-.msg .md h1{font-size:1.15rem}.msg .md h2{font-size:1.05rem}.msg .md h3{font-size:.98rem}
-.msg .md ul,.msg .md ol{margin:6px 0;padding-left:20px}
-.msg .md p{margin:6px 0}
-.msg .md table{border-collapse:collapse;margin:8px 0;width:100%}
-.msg .md th,.msg .md td{border:1px solid var(--border);padding:5px 8px;text-align:left;font-size:.85rem}
-.msg-actions{display:flex;gap:4px;margin-top:6px;opacity:.55}
-.msg:hover .msg-actions{opacity:1}
-.msg-actions button{background:rgba(255,255,255,.08);border:none;color:var(--text);cursor:pointer;font-size:.72rem;padding:3px 8px;border-radius:6px}
-.msg-actions button:hover{background:rgba(99,102,241,.35)}
-.ai-toolform{margin:0 16px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(0,0,0,.2);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
-.ai-toolform label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;color:var(--muted);flex:1;min-width:130px}
-.ai-toolform input,.ai-toolform textarea{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:#fff;font-size:.85rem}
-.ai-toolform textarea{min-height:64px;resize:vertical}
-.ai-toolform .wide{flex:1 1 100%}
-.ai-composer{padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
-.ai-attach-bar{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted)}
-.ai-attach-bar .chip{background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.4);padding:3px 9px;border-radius:8px;color:#fff;display:flex;align-items:center;gap:6px}
-.ai-attach-bar .chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem}
-.ai-input-row{display:flex;gap:8px;align-items:flex-end}
-.ai-input-row textarea{flex:1;min-height:46px;max-height:160px;resize:none;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:#fff;font-size:.92rem;line-height:1.4}
-.ai-input-row .btn-ico{width:44px;height:44px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center}
-.ai-input-row .btn-ico:hover{background:rgba(255,255,255,.12)}
-.ai-input-row .btn-send{width:auto;height:44px;padding:0 18px;border-radius:11px;border:none;background:linear-gradient(135deg,#4f46e5,#a855f7);color:#fff;font-weight:600;cursor:pointer}
-.ai-input-row .btn-send:disabled{opacity:.5;cursor:not-allowed}
-.ai-cursor{display:inline-block;width:7px;height:15px;background:#a5b4fc;margin-left:2px;vertical-align:-2px;animation:blink 1s infinite}
-@keyframes blink{50%{opacity:0}}
-@media (max-width:860px){.ai-shell{flex-direction:column;height:auto}.ai-side{width:100%;flex:none;max-height:280px}.ai-main{min-height:60vh}}
-</style>
-
-<div class="ai-shell">
-  <aside class="ai-side">
-    <button class="ai-new" id="newChatBtn"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>{{ t('ai_new_chat', lang) }}</span></button>
-    <input class="ai-search" id="convSearch" placeholder="{{ t('ai_search', lang) }}…">
-    <h3>{{ t('ai_select_tool', lang) }}</h3>
-    <div class="ai-tools-list" id="toolList"></div>
-    <h3>{{ t('ai_history', lang) }}</h3>
-    <div class="ai-conv-list" id="convList"></div>
-  </aside>
-
-  <div class="ai-main">
-    <div class="ai-header">
-      <div>
-        <div class="title" id="convTitle">{{ t('ai_title', lang) }}</div>
-        <div style="font-size:.72rem;color:var(--muted)">{{ t('ai_tagline', lang) }}</div>
-      </div>
-      <span class="model">{{ model_name }}</span>
+<div class="ai-app" id="aiApp">
+  <aside class="ai-sidebar" id="aiSidebar">
+    <div class="ai-sidebar-top">
+      <button type="button" class="ai-new" id="newChatBtn"><svg fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M12 5v14M5 12h14"/></svg><span>{{ t('ai_new_chat', lang) }}</span></button>
+      <div class="ai-search-wrap"><input id="convSearch" placeholder="{{ t('ai_search', lang) }}…" autocomplete="off"></div>
     </div>
+    <div class="ai-sidebar-body">
+      <button type="button" class="ai-section-head" id="toolsToggle"><span>{{ t('ai_select_tool', lang) }}</span><span class="caret" id="toolsCaret">▾</span></button>
+      <div class="ai-tools" id="toolList"></div>
+      <div class="ai-section-head"><span>{{ t('ai_history', lang) }}</span></div>
+      <div class="ai-convs" id="convList"></div>
+    </div>
+  </aside>
+  <div class="ai-backdrop" id="aiBackdrop"></div>
+
+  <section class="ai-chat">
+    <header class="ai-top">
+      <button type="button" class="ai-collapse" id="collapseBtn" title="Toggle sidebar">☰</button>
+      <div class="ai-top-title" id="convTitle">{{ t('ai_title', lang) }}</div>
+      <span class="ai-model">{{ model_name }}</span>
+    </header>
     {% if not configured %}
     <div class="ai-nokey">{{ t('ai_no_key', lang) }}{% if session.get('role') == 'admin' %} <a href="{{ url_for('ai.settings') }}">{{ t('ai_configure_key', lang) }} →</a>{% endif %}</div>
     {% endif %}
     <div class="ai-messages" id="msgArea">
-      <div class="ai-empty" id="emptyState">
-        <div class="big">✨</div>
-        <div>{{ t('ai_empty_state', lang) }}</div>
+      <div class="ai-welcome" id="emptyState">
+        <div class="ai-logo">✨</div>
+        <h1>{{ t('ai_title', lang) }}</h1>
+        <p class="tagline">{{ t('ai_tagline', lang) }}</p>
+        <div class="ai-suggest" id="suggestList"></div>
       </div>
     </div>
     <div class="ai-toolform" id="toolForm" style="display:none"></div>
-    <div class="ai-composer">
+    <footer class="ai-composer">
+      <div class="ai-tool-active" id="toolActive" style="display:none"></div>
       <div class="ai-attach-bar" id="attachBar" style="display:none"></div>
       <div class="ai-input-row">
-        <button class="btn-ico" id="attachBtn" type="button" title="{{ t('ai_attach', lang) }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H5l-2 2V11.5A8.5 8.5 0 0 1 11.5 3h1A8.5 8.5 0 0 1 21 11.5z"/></svg></button>
+        <button type="button" class="ai-btn-ico" id="attachBtn" title="{{ t('ai_attach', lang) }}">📎</button>
         <textarea id="msgInput" rows="1" placeholder="{{ t('ai_placeholder', lang) }}"></textarea>
-        <button class="btn-send" id="sendBtn" type="button">{{ t('ai_send', lang) }}</button>
+        <button type="button" class="ai-btn-send" id="sendBtn">{{ t('ai_send', lang) }}</button>
       </div>
-    </div>
-  </div>
+    </footer>
+  </section>
 </div>
 <input type="file" id="fileInput" style="display:none" accept=".pdf,.docx,.txt,.md,.csv,.json,.xlsx,.xls,.html,.htm">
+<div class="ai-toast" id="aiToast" style="display:none"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -116,59 +58,81 @@
   var TOOLS = {{ tools_json | safe }};
   var STR = {{ strings_json | safe }};
   var configured = {{ 'true' if configured else 'false' }};
+  var TASKS = [
+    { id: 'lesson_planner', icon: 'plan', label: STR.ai_task_lesson },
+    { id: 'worksheet', icon: 'sheet', label: STR.ai_task_worksheet },
+    { id: 'exam_paper', icon: 'exam', label: STR.ai_task_exam },
+    { id: 'parent_comm', icon: 'parent', label: STR.ai_task_parent },
+    { id: 'attendance_summary', icon: 'staff', label: STR.ai_task_attendance },
+    { id: 'translator', icon: 'lang', label: STR.ai_task_translate }
+  ];
 
   var state = { convId: null, tool: 'chat', context: null, contextName: '' };
+  function $(id) { return document.getElementById(id); }
   var el = {
-    toolList: document.getElementById('toolList'),
-    convList: document.getElementById('convList'),
-    convSearch: document.getElementById('convSearch'),
-    convTitle: document.getElementById('convTitle'),
-    msgArea: document.getElementById('msgArea'),
-    emptyState: document.getElementById('emptyState'),
-    toolForm: document.getElementById('toolForm'),
-    msgInput: document.getElementById('msgInput'),
-    sendBtn: document.getElementById('sendBtn'),
-    attachBtn: document.getElementById('attachBtn'),
-    fileInput: document.getElementById('fileInput'),
-    attachBar: document.getElementById('attachBar')
+    app: $('aiApp'), collapseBtn: $('collapseBtn'), backdrop: $('aiBackdrop'),
+    toolList: $('toolList'), toolsToggle: $('toolsToggle'), toolsCaret: $('toolsCaret'),
+    convList: $('convList'), convSearch: $('convSearch'), convTitle: $('convTitle'),
+    msgArea: $('msgArea'), emptyState: $('emptyState'),
+    toolForm: $('toolForm'), msgInput: $('msgInput'), sendBtn: $('sendBtn'),
+    attachBtn: $('attachBtn'), fileInput: $('fileInput'), attachBar: $('attachBar'),
+    suggestList: $('suggestList'), newChatBtn: $('newChatBtn'), aiToast: $('aiToast'),
+    toolActive: $('toolActive')
   };
   var conversations = [];
 
-  function toolById(id) { for (var i=0;i<TOOLS.length;i++) if (TOOLS[i].id===id) return TOOLS[i]; return TOOLS[0]; }
-  function icon(name) { return '<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-'+name+'"/></svg>'; }
+  function toast(msg, isErr) {
+    if (!el.aiToast) return;
+    el.aiToast.textContent = msg;
+    el.aiToast.className = 'ai-toast' + (isErr ? ' err' : '');
+    el.aiToast.style.display = 'block';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.aiToast.style.display = 'none'; }, 3800);
+  }
+  function errText(code) {
+    var map = { no_key: STR.ai_no_key, limit: 'Daily limit reached', stream_failed: 'Stream failed', empty: 'Empty message', not_found: 'Conversation not found', bad_type: 'Unsupported file type', no_text: 'No readable text in that file' };
+    return map[code] || (code || 'Error');
+  }
 
-  // ---- Markdown-ish renderer ----
-  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  function renderMd(src){
-    var blocks = src.split(/```/);
+  function toolById(id) { for (var i = 0; i < TOOLS.length; i++) if (TOOLS[i].id === id) return TOOLS[i]; return TOOLS[0]; }
+  function icon(name) { return '<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-' + name + '"/></svg>'; }
+
+  // ---- Markdown renderer ----
+  function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function renderMd(src) {
+    var blocks = String(src || '').split(/```/);
     var out = '';
-    for (var i=0;i<blocks.length;i++){
-      if (i%2===1){ out += '<pre>' + esc(blocks[i].replace(/^\w*\n/,'')) + '</pre>'; continue; }
+    for (var i = 0; i < blocks.length; i++) {
+      if (i % 2 === 1) {
+        var code = blocks[i].replace(/^\w*\n/, '');
+        out += '<div class="code-block"><pre>' + esc(code) + '</pre><button type="button" class="code-copy">Copy</button></div>';
+        continue;
+      }
       out += renderInline(blocks[i]);
     }
     return out;
   }
-  function renderInline(t){
+  function renderInline(t) {
     var lines = t.split('\n');
-    var out = '', inUl=false, inOl=false, para='';
-    function flushPara(){ if(para){ out += '<p>'+para+'</p>'; para=''; } }
-    function closeLists(){ if(inUl){out+='</ul>';inUl=false;} if(inOl){out+='</ol>';inOl=false;} }
-    for (var i=0;i<lines.length;i++){
+    var out = '', inUl = false, inOl = false, para = '';
+    function flushPara() { if (para) { out += '<p>' + para + '</p>'; para = ''; } }
+    function closeLists() { if (inUl) { out += '</ul>'; inUl = false; } if (inOl) { out += '</ol>'; inOl = false; } }
+    for (var i = 0; i < lines.length; i++) {
       var ln = lines[i];
       var h = ln.match(/^(#{1,4})\s+(.*)/);
-      if (h){ flushPara(); closeLists(); var lv=h[1].length; out += '<h'+lv+'>'+inline(h[2])+'</h'+lv+'>'; continue; }
+      if (h) { flushPara(); closeLists(); var lv = h[1].length; out += '<h' + lv + '>' + inline(h[2]) + '</h' + lv + '>'; continue; }
       var ul = ln.match(/^\s*[-*]\s+(.*)/);
-      if (ul){ flushPara(); if(!inUl){out+='<ul>';inUl=true;} out += '<li>'+inline(ul[1])+'</li>'; continue; }
+      if (ul) { flushPara(); if (!inUl) { out += '<ul>'; inUl = true; } out += '<li>' + inline(ul[1]) + '</li>'; continue; }
       var ol = ln.match(/^\s*\d+[.)]\s+(.*)/);
-      if (ol){ flushPara(); if(!inOl){out+='<ol>';inOl=true;} out += '<li>'+inline(ol[1])+'</li>'; continue; }
-      if (ln.trim()===''){ flushPara(); closeLists(); continue; }
+      if (ol) { flushPara(); if (!inOl) { out += '<ol>'; inOl = true; } out += '<li>' + inline(ol[1]) + '</li>'; continue; }
+      if (ln.trim() === '') { flushPara(); closeLists(); continue; }
       if (para) para += '<br>';
       para += inline(ln);
     }
     flushPara(); closeLists();
     return out;
   }
-  function inline(s){
+  function inline(s) {
     s = esc(s);
     s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -177,318 +141,360 @@
   }
 
   // ---- Message rendering ----
-  function addMsg(role, html, raw, id){
+  function addMsg(role, html, raw, id) {
     if (el.emptyState) { el.emptyState.remove(); el.emptyState = null; }
     var wrap = document.createElement('div');
     wrap.className = 'msg ' + role;
     if (id != null) wrap.setAttribute('data-id', id);
     wrap.setAttribute('data-raw', raw || '');
+    var avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'ai' ? '✦' : 'U';
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
     var body = document.createElement('div');
     body.className = 'md';
     body.innerHTML = html;
-    wrap.appendChild(body);
+    bubble.appendChild(body);
     var acts = document.createElement('div');
     acts.className = 'msg-actions';
-    if (role === 'ai'){
-      acts.innerHTML = '<button data-a="copy">'+STR.ai_copy+'</button>'
-        + '<button data-a="edit">'+STR.ai_edit+'</button>'
-        + '<button data-a="pdf">'+STR.ai_download_pdf+'</button>'
-        + '<button data-a="docx">'+STR.ai_download_docx+'</button>'
-        + '<button data-a="regen">'+STR.ai_regenerate+'</button>';
+    if (role === 'ai') {
+      acts.innerHTML = '<button type="button" data-a="copy">' + STR.ai_copy + '</button>'
+        + '<button type="button" data-a="edit">' + STR.ai_edit + '</button>'
+        + '<button type="button" data-a="pdf">' + STR.ai_download_pdf + '</button>'
+        + '<button type="button" data-a="docx">' + STR.ai_download_docx + '</button>'
+        + '<button type="button" data-a="regen">' + STR.ai_regenerate + '</button>';
     } else {
-      acts.innerHTML = '<button data-a="copy">'+STR.ai_copy+'</button>'
-        + '<button data-a="edit">'+STR.ai_edit+'</button>';
+      acts.innerHTML = '<button type="button" data-a="copy">' + STR.ai_copy + '</button>'
+        + '<button type="button" data-a="edit">' + STR.ai_edit + '</button>';
     }
-    wrap.appendChild(acts);
+    bubble.appendChild(acts);
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
     el.msgArea.appendChild(wrap);
     el.msgArea.scrollTop = el.msgArea.scrollHeight;
-    // wire actions
-    acts.addEventListener('click', function(e){
-      var a = e.target.getAttribute('data-a'); if(!a) return;
-      if (a==='copy'){ navigator.clipboard.writeText(raw); }
-      else if (a==='edit'){ editMessage(wrap, raw); }
-      else if (a==='pdf'){ downloadDoc(raw, 'pdf'); }
-      else if (a==='docx'){ downloadDoc(raw, 'docx'); }
-      else if (a==='regen'){ regenerate(); }
+    acts.addEventListener('click', function (e) {
+      var a = e.target.getAttribute('data-a'); if (!a) return;
+      if (a === 'copy') { navigator.clipboard.writeText(raw); }
+      else if (a === 'edit') { editMessage(wrap, raw); }
+      else if (a === 'pdf') { downloadDoc(raw, 'pdf'); }
+      else if (a === 'docx') { downloadDoc(raw, 'docx'); }
+      else if (a === 'regen') { regenerate(); }
     });
-    return wrap;
+    return { wrap: wrap, body: body };
   }
 
-  function editMessage(wrap, raw){
-    var body = wrap.querySelector('.md');
+  function editMessage(wrap, raw) {
+    var bubble = wrap.querySelector('.bubble .md');
     var id = wrap.getAttribute('data-id');
-    body.innerHTML = '';
+    bubble.innerHTML = '';
     var ta = document.createElement('textarea');
     ta.value = raw;
     ta.style.cssText = 'width:100%;min-height:140px;background:rgba(0,0,0,.3);color:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.9rem;font-family:inherit';
     var bar = document.createElement('div');
     bar.style.cssText = 'display:flex;gap:6px;margin-top:8px';
     var save = document.createElement('button');
-    save.textContent = STR.save;
+    save.type = 'button'; save.textContent = STR.save;
     save.style.cssText = 'padding:5px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#4f46e5,#a855f7);color:#fff;cursor:pointer;font-size:.8rem';
     var cancel = document.createElement('button');
-    cancel.textContent = STR.cancel;
+    cancel.type = 'button'; cancel.textContent = STR.cancel;
     cancel.style.cssText = 'padding:5px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:.8rem';
     bar.appendChild(save); bar.appendChild(cancel);
-    body.appendChild(ta); body.appendChild(bar);
+    bubble.appendChild(ta); bubble.appendChild(bar);
     ta.focus();
-    function done(){ body.innerHTML = renderMd(raw); wrap.setAttribute('data-raw', raw); }
-    cancel.addEventListener('click', function(){ done(); });
-    save.addEventListener('click', function(){
+    function done() { bubble.innerHTML = renderMd(raw); wrap.setAttribute('data-raw', raw); }
+    cancel.addEventListener('click', done);
+    save.addEventListener('click', function () {
       var val = ta.value;
-      if (id){
-        fetch('/ai/api/messages/'+id, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({content: val})})
-          .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-          .then(function(){ raw = val; done(); })
-          .catch(function(){ alert('Save failed'); });
+      if (id) {
+        fetch('/ai/api/messages/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: val }) })
+          .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+          .then(function () { raw = val; done(); })
+          .catch(function () { toast('Save failed', true); });
       } else { raw = val; done(); }
     });
   }
 
-  function downloadDoc(text, fmt){
-    fetch('/ai/api/generate-doc', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:text, format:fmt, title: state.convId ? ('TeachFlow-'+state.convId) : 'TeachFlow'})})
-      .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
-      .then(function(b){ var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=(fmt==='pdf'?'TeachFlow.pdf':'TeachFlow.docx'); a.click(); URL.revokeObjectURL(u); })
-      .catch(function(){ alert('Error'); });
+  function downloadDoc(text, fmt) {
+    fetch('/ai/api/generate-doc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, format: fmt, title: state.convId ? ('TeachFlow-' + state.convId) : 'TeachFlow' }) })
+      .then(function (r) { if (!r.ok) throw 0; return r.blob(); })
+      .then(function (b) { var u = URL.createObjectURL(b); var a = document.createElement('a'); a.href = u; a.download = (fmt === 'pdf' ? 'TeachFlow.pdf' : 'TeachFlow.docx'); a.click(); URL.revokeObjectURL(u); })
+      .catch(function () { toast('Download failed', true); });
   }
 
   // ---- Streaming send ----
-  function sendMessage(message, tool, context, contextName){
+  function sendMessage(message, tool, context) {
     if (!message.trim()) return;
     var body = { message: message, tool: tool };
     if (state.convId) body.conversation_id = state.convId;
-    if (context) { body.context = context; }
+    if (context) body.context = context;
     addMsg('user', esc(message), message);
     clearAttach();
     el.sendBtn.disabled = true;
-    var aiWrap = addMsg('ai', '<span class="ai-cursor"></span>', '');
-    var aiBody = aiWrap.querySelector('.md');
-    aiBody.innerHTML = '';
+    var ai = addMsg('ai', '<span class="ai-cursor"></span>', '');
+    ai.body.innerHTML = '';
 
-    fetch('/ai/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
-      .then(function(r){
-        if (!r.ok){
-          return r.json().catch(function(){return {};}).then(function(j){ throw new Error(errText(j.error)); });
-        }
+    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (!r.ok) { return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(errText(j.error)); }); }
         var reader = r.body.getReader();
         var dec = new TextDecoder();
         var buf = '', full = '';
-        function pump(){
-          return reader.read().then(function(res){
+        function pump() {
+          return reader.read().then(function (res) {
             if (res.done) return;
-            buf += dec.decode(res.value, {stream:true});
+            buf += dec.decode(res.value, { stream: true });
             var idx;
-            while ((idx = buf.indexOf('\n\n')) >= 0){
-              var evt = buf.slice(0, idx); buf = buf.slice(idx+2);
+            while ((idx = buf.indexOf('\n\n')) >= 0) {
+              var evt = buf.slice(0, idx); buf = buf.slice(idx + 2);
               var lines = evt.split('\n');
-              for (var k=0;k<lines.length;k++){
+              for (var k = 0; k < lines.length; k++) {
                 var ln = lines[k];
                 if (ln.indexOf('data: ') !== 0) continue;
                 var data = JSON.parse(ln.slice(6));
-                if (data.error){ throw new Error(errText(data.error)); }
-                if (data.delta){ full += data.delta; aiBody.innerHTML = renderMd(full) + '<span class="ai-cursor"></span>'; el.msgArea.scrollTop = el.msgArea.scrollHeight; }
-                if (data.done){ state.convId = data.conversation_id; }
+                if (data.error) throw new Error(errText(data.error));
+                if (data.delta) { full += data.delta; ai.body.innerHTML = renderMd(full) + '<span class="ai-cursor"></span>'; el.msgArea.scrollTop = el.msgArea.scrollHeight; }
+                if (data.done) { state.convId = data.conversation_id; }
               }
             }
             return pump();
           });
         }
-        return pump().then(function(){ return full; });
+        return pump().then(function () { return full; });
       })
-      .then(function(full){
-        var body2 = aiWrap.querySelector('.md');
-        if (body2) body2.innerHTML = renderMd(full || '');
-        aiWrap.setAttribute('data-raw', full || '');
+      .then(function (full) {
+        ai.body.innerHTML = renderMd(full || '');
+        ai.wrap.setAttribute('data-raw', full || '');
       })
-      .catch(function(err){
-        var body2 = aiWrap.querySelector('.md');
-        if (body2) body2.innerHTML = esc(err.message || 'Error');
+      .catch(function (err) {
+        ai.body.innerHTML = esc(err.message || 'Error');
       })
-      .finally(function(){
+      .finally(function () {
         el.sendBtn.disabled = false;
         loadConversations();
-        if (state.convId) selectConversation(state.convId, true);
+        if (state.convId) selectConversation(state.convId);
       });
   }
 
-  function errText(code){
-    var map = { no_key: STR.ai_no_key, limit: 'Daily limit reached', stream_failed: 'Stream failed', empty: 'Empty message', not_found: 'Conversation not found', bad_type: 'Unsupported file type', no_text: 'No readable text in that file' };
-    return map[code] || (code || 'Error');
-  }
-
-  function regenerate(){
+  function regenerate() {
     if (!state.convId) return;
-    fetch('/ai/api/regenerate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({conversation_id: state.convId})})
-      .then(function(r){
-        if (!r.ok){ return r.json().then(function(j){ throw new Error(errText(j.error)); }); }
-        var reader = r.body.getReader(); var dec = new TextDecoder(); var buf='', full='';
-        var aiWrap = addMsg('ai','',''); var aiBody = aiWrap.querySelector('.md');
-        aiBody.innerHTML = '<span class="ai-cursor"></span>';
-        function pump(){ return reader.read().then(function(res){
-          if (res.done) return;
-          buf += dec.decode(res.value,{stream:true});
-          var idx;
-          while((idx=buf.indexOf('\n\n'))>=0){
-            var evt=buf.slice(0,idx); buf=buf.slice(idx+2);
-            evt.split('\n').forEach(function(ln){
-              if (ln.indexOf('data: ')!==0) return;
-              var d=JSON.parse(ln.slice(6));
-              if (d.error) throw new Error(errText(d.error));
-              if (d.delta){ full+=d.delta; aiBody.innerHTML=renderMd(full)+'<span class="ai-cursor"></span>'; el.msgArea.scrollTop=el.msgArea.scrollHeight; }
-            });
-          }
-          return pump();
-        });}
-        return pump().then(function(){ aiBody.innerHTML = renderMd(full); });
+    fetch('/ai/api/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: state.convId }) })
+      .then(function (r) {
+        if (!r.ok) { return r.json().then(function (j) { throw new Error(errText(j.error)); }); }
+        var reader = r.body.getReader(); var dec = new TextDecoder(); var buf = '', full = '';
+        var ai = addMsg('ai', '<span class="ai-cursor"></span>', ''); ai.body.innerHTML = '';
+        function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) return;
+            buf += dec.decode(res.value, { stream: true });
+            var idx;
+            while ((idx = buf.indexOf('\n\n')) >= 0) {
+              var evt = buf.slice(0, idx); buf = buf.slice(idx + 2);
+              evt.split('\n').forEach(function (ln) {
+                if (ln.indexOf('data: ') !== 0) return;
+                var d = JSON.parse(ln.slice(6));
+                if (d.error) throw new Error(errText(d.error));
+                if (d.delta) { full += d.delta; ai.body.innerHTML = renderMd(full) + '<span class="ai-cursor"></span>'; el.msgArea.scrollTop = el.msgArea.scrollHeight; }
+              });
+            }
+            return pump();
+          });
+        }
+        return pump().then(function () { ai.body.innerHTML = renderMd(full); ai.wrap.setAttribute('data-raw', full); });
       })
-      .catch(function(err){ alert(err.message); });
+      .catch(function (err) { toast(err.message, true); });
   }
 
-  // ---- Tools & forms ----
-  function renderTools(){
+  // ---- Tools ----
+  function renderTools() {
     el.toolList.innerHTML = '';
-    TOOLS.forEach(function(t){
+    TOOLS.forEach(function (t) {
       var b = document.createElement('button');
-      b.className = 'ai-tool' + (state.tool===t.id ? ' on' : '');
+      b.type = 'button';
+      b.className = 'ai-tool' + (state.tool === t.id ? ' on' : '');
       b.innerHTML = icon(t.icon) + '<span>' + esc(t.name) + '</span>';
-      b.addEventListener('click', function(){ selectTool(t.id); });
+      b.addEventListener('click', function () { selectTool(t.id); });
       el.toolList.appendChild(b);
     });
   }
-  function selectTool(id){
+  function updateToolActive() {
+    if (state.tool === 'chat') { el.toolActive.style.display = 'none'; el.toolActive.innerHTML = ''; return; }
+    var t = toolById(state.tool);
+    el.toolActive.style.display = 'flex';
+    el.toolActive.innerHTML = '<span class="pill">' + esc(t.name) + ' <button type="button" id="clearTool">✕</button></span>';
+    $('clearTool').addEventListener('click', function () { selectTool('chat'); });
+  }
+  function selectTool(id) {
     state.tool = id;
     renderTools();
+    updateToolActive();
     var t = toolById(id);
-    if (id === 'attendance_summary'){
+    if (id === 'attendance_summary') {
       showToolForm([]);
       el.msgInput.value = 'Generate my attendance summary report.';
       el.msgInput.focus();
-    } else if (t.fields.length){
+    } else if (t.fields.length) {
       showToolForm(t.fields);
     } else {
       showToolForm([]);
     }
   }
-  function showToolForm(fields){
-    if (!fields.length){ el.toolForm.style.display='none'; el.toolForm.innerHTML=''; return; }
+  function showToolForm(fields) {
+    if (!fields.length) { el.toolForm.style.display = 'none'; el.toolForm.innerHTML = ''; return; }
     el.toolForm.style.display = 'flex';
     var html = '';
-    fields.forEach(function(f){
-      if (f.type==='textarea'){
-        html += '<label class="wide">'+esc(f.label)+'<textarea id="tf_'+f.key+'"></textarea></label>';
-      } else {
-        html += '<label>'+esc(f.label)+'<input id="tf_'+f.key+'" type="text"></label>';
-      }
+    fields.forEach(function (f) {
+      if (f.type === 'textarea') html += '<label class="wide">' + esc(f.label) + '<textarea id="tf_' + f.key + '"></textarea></label>';
+      else html += '<label>' + esc(f.label) + '<input id="tf_' + f.key + '" type="text"></label>';
     });
-    html += '<button class="btn-send" id="toolGenBtn" type="button">'+STR.ai_generate+'</button>';
+    html += '<button type="button" class="gen-btn" id="toolGenBtn">' + STR.ai_generate + '</button>';
     el.toolForm.innerHTML = html;
-    document.getElementById('toolGenBtn').addEventListener('click', function(){
+    $('toolGenBtn').addEventListener('click', function () {
       var t = toolById(state.tool);
       var lines = [t.name];
-      t.fields.forEach(function(f){
-        var v = (document.getElementById('tf_'+f.key).value||'').trim();
+      t.fields.forEach(function (f) {
+        var v = ($('tf_' + f.key).value || '').trim();
         if (v) lines.push(f.label + ': ' + v);
       });
-      sendMessage(lines.join('\n'), state.tool, null, null);
+      sendMessage(lines.join('\n'), state.tool, null);
+    });
+  }
+  function renderSuggestions() {
+    el.suggestList.innerHTML = '';
+    TASKS.forEach(function (tk) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.className = 'task';
+      c.innerHTML = icon(tk.icon) + '<span>' + esc(tk.label) + '</span>';
+      c.addEventListener('click', function () { selectTool(tk.id); });
+      el.suggestList.appendChild(c);
     });
   }
 
   // ---- Conversations ----
-  function loadConversations(){
-    fetch('/ai/api/conversations').then(function(r){return r.json();}).then(function(list){
-      conversations = list;
-      renderConversations();
-    });
+  function loadConversations() {
+    fetch('/ai/api/conversations')
+      .then(function (r) { return r.json(); })
+      .then(function (list) { conversations = list; renderConversations(); })
+      .catch(function () { toast('Failed to load history', true); });
   }
-  function renderConversations(){
-    var q = (el.convSearch.value||'').toLowerCase();
+  function renderConversations() {
+    var q = (el.convSearch.value || '').toLowerCase();
     el.convList.innerHTML = '';
-    conversations.filter(function(c){ return c.title.toLowerCase().indexOf(q)>=0; }).forEach(function(c){
+    var filtered = conversations.filter(function (c) { return (c.title || '').toLowerCase().indexOf(q) >= 0; });
+    if (!filtered.length) {
+      el.convList.innerHTML = '<div class="ai-conv-empty">' + (conversations.length ? 'No matches' : 'No conversations yet') + '</div>';
+      return;
+    }
+    filtered.forEach(function (c) {
       var d = document.createElement('div');
-      d.className = 'ai-conv' + (state.convId===c.id ? ' on' : '');
-      d.innerHTML = '<span class="t">'+esc(c.title)+'</span>'
-        + '<span class="acts"><button data-a="rename" title="'+STR.ai_rename+'">✎</button><button data-a="del" title="'+STR.ai_delete+'">✕</button></span>';
-      d.addEventListener('click', function(e){
+      d.className = 'ai-conv' + (state.convId === c.id ? ' on' : '');
+      d.innerHTML = '<span class="t">' + esc(c.title) + '</span>'
+        + '<span class="acts"><button type="button" data-a="rename" title="' + STR.ai_rename + '">✎</button><button type="button" data-a="del" title="' + STR.ai_delete + '">✕</button></span>';
+      d.addEventListener('click', function (e) {
         if (e.target.getAttribute('data-a')) return;
         selectConversation(c.id);
       });
-      d.querySelector('[data-a="rename"]').addEventListener('click', function(){
+      d.querySelector('[data-a="rename"]').addEventListener('click', function () {
         var name = prompt(STR.ai_rename, c.title);
-        if (name && name.trim()){
-          fetch('/ai/api/conversations/'+c.id, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title:name})})
-            .then(function(){ loadConversations(); });
+        if (name && name.trim()) {
+          fetch('/ai/api/conversations/' + c.id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: name }) })
+            .then(function () { loadConversations(); })
+            .catch(function () { toast('Rename failed', true); });
         }
       });
-      d.querySelector('[data-a="del"]').addEventListener('click', function(){
+      d.querySelector('[data-a="del"]').addEventListener('click', function () {
         if (!confirm(STR.ai_delete + '?')) return;
-        fetch('/ai/api/conversations/'+c.id, {method:'DELETE'}).then(function(){
-          if (state.convId===c.id){ state.convId=null; el.msgArea.innerHTML=''; el.convTitle.textContent = STR.ai_new_chat; }
-          loadConversations();
-        });
+        fetch('/ai/api/conversations/' + c.id, { method: 'DELETE' })
+          .then(function () {
+            if (state.convId === c.id) resetChat();
+            loadConversations();
+          })
+          .catch(function () { toast('Delete failed', true); });
       });
       el.convList.appendChild(d);
     });
   }
-  function selectConversation(id, skipReload){
+  function selectConversation(id) {
     state.convId = id;
     renderConversations();
-    fetch('/ai/api/conversations/'+id+'/messages').then(function(r){return r.json();}).then(function(msgs){
-      var title = '';
-      var c = conversations.filter(function(x){return x.id===id;})[0];
-      if (c) title = c.title;
-      el.convTitle.textContent = title || STR.ai_new_chat;
-      el.msgArea.innerHTML = '';
-      el.emptyState = null;
-      msgs.forEach(function(m){
-        addMsg(m.role, m.role==='ai' ? renderMd(m.content) : esc(m.content), m.content, m.id);
-      });
-    });
+    fetch('/ai/api/conversations/' + id + '/messages')
+      .then(function (r) { return r.json(); })
+      .then(function (msgs) {
+        var c = conversations.filter(function (x) { return x.id === id; })[0];
+        el.convTitle.textContent = (c && c.title) || STR.ai_new_chat;
+        el.msgArea.innerHTML = '';
+        el.emptyState = null;
+        msgs.forEach(function (m) {
+          addMsg(m.role, m.role === 'ai' ? renderMd(m.content) : esc(m.content), m.content, m.id);
+        });
+      })
+      .catch(function () { toast('Failed to load messages', true); });
+  }
+  function resetChat() {
+    state.convId = null; state.tool = 'chat'; clearAttach();
+    el.msgArea.innerHTML = '<div class="ai-welcome" id="emptyState"><div class="ai-logo">✨</div><h1>' + STR.ai_new_chat + '</h1><p class="tagline">' + STR.ai_empty_state + '</p><div class="ai-suggest" id="suggestList"></div></div>';
+    el.emptyState = $('emptyState');
+    el.suggestList = $('suggestList');
+    el.convTitle.textContent = STR.ai_new_chat;
+    renderTools(); renderSuggestions(); showToolForm([]); updateToolActive();
+    el.msgInput.focus();
   }
 
   // ---- Attach ----
-  function clearAttach(){ state.context=null; state.contextName=''; renderAttach(); }
-  function renderAttach(){
-    if (!state.contextName){ el.attachBar.style.display='none'; el.attachBar.innerHTML=''; return; }
-    el.attachBar.style.display='flex';
-    el.attachBar.innerHTML = STR.ai_attached + ': <span class="chip">'+esc(state.contextName)+' <button id="rmAttach">✕</button></span>';
-    document.getElementById('rmAttach').addEventListener('click', clearAttach);
+  function clearAttach() { state.context = null; state.contextName = ''; renderAttach(); }
+  function renderAttach() {
+    if (!state.contextName) { el.attachBar.style.display = 'none'; el.attachBar.innerHTML = ''; return; }
+    el.attachBar.style.display = 'flex';
+    el.attachBar.innerHTML = STR.ai_attached + ': <span class="chip">' + esc(state.contextName) + ' <button type="button" id="rmAttach">✕</button></span>';
+    $('rmAttach').addEventListener('click', clearAttach);
   }
 
   // ---- Wire up ----
-  el.sendBtn.addEventListener('click', function(){
-    sendMessage(el.msgInput.value, state.tool, state.context, state.contextName);
+  el.sendBtn.addEventListener('click', function () {
+    sendMessage(el.msgInput.value, state.tool, state.context);
     el.msgInput.value = '';
   });
-  el.msgInput.addEventListener('keydown', function(e){
-    if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); el.sendBtn.click(); }
+  el.msgInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.sendBtn.click(); }
   });
   el.convSearch.addEventListener('input', renderConversations);
-  el.newChatBtn.addEventListener('click', function(){
-    state.convId = null; state.tool = 'chat'; clearAttach();
-    el.msgArea.innerHTML = '<div class="ai-empty" id="emptyState"><div class="big">✨</div><div>'+STR.ai_empty_state+'</div></div>';
-    el.emptyState = el.msgArea.querySelector('#emptyState');
-    el.convTitle.textContent = STR.ai_new_chat;
-    renderTools(); showToolForm([]);
-    el.msgInput.focus();
+  el.newChatBtn.addEventListener('click', resetChat);
+  el.attachBtn.addEventListener('click', function () { el.fileInput.click(); });
+  el.toolsToggle.addEventListener('click', function () {
+    el.toolList.classList.toggle('collapsed');
+    el.toolsCaret.textContent = el.toolList.classList.contains('collapsed') ? '▸' : '▾';
   });
-  el.attachBtn.addEventListener('click', function(){ el.fileInput.click(); });
-  el.fileInput.addEventListener('change', function(){
+  el.collapseBtn.addEventListener('click', function () {
+    if (window.innerWidth > 860) { el.app.classList.toggle('collapsed'); }
+    else { el.app.classList.toggle('open'); }
+  });
+  el.backdrop.addEventListener('click', function () { el.app.classList.remove('open'); });
+  el.fileInput.addEventListener('change', function () {
     var f = el.fileInput.files[0]; if (!f) return;
     var fd = new FormData(); fd.append('file', f);
-    fetch('/ai/api/upload', {method:'POST', body: fd})
-      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
-      .then(function(res){
+    fetch('/ai/api/upload', { method: 'POST', body: fd })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
         if (!res.ok) throw new Error(errText(res.j.error));
         state.context = res.j.text; state.contextName = res.j.name; renderAttach();
       })
-      .catch(function(err){ alert(err.message); })
-      .finally(function(){ el.fileInput.value=''; });
+      .catch(function (err) { toast(err.message, true); })
+      .finally(function () { el.fileInput.value = ''; });
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.code-copy');
+    if (!b) return;
+    var pre = b.parentNode.querySelector('pre');
+    if (pre && navigator.clipboard) navigator.clipboard.writeText(pre.innerText);
   });
 
-  // init
+  // ---- Init ----
   renderTools();
+  renderSuggestions();
   loadConversations();
-  if (!configured){ el.sendBtn.disabled = true; }
+  updateToolActive();
+  if (!configured) { el.sendBtn.disabled = true; }
 })();
 </script>
 {% endblock %}

@@ -333,6 +333,8 @@ def index():
         "ai_configure_key", "ai_select_tool", "ai_empty_state", "ai_send",
         "ai_generate", "ai_clear", "ai_attached", "ai_remove_attach",
         "save", "cancel", "ai_tagline",
+        "ai_task_lesson", "ai_task_worksheet", "ai_task_exam",
+        "ai_task_parent", "ai_task_attendance", "ai_task_translate",
     ]
     return render_template(
         "ai_assistant.html",
@@ -374,7 +376,7 @@ def conversations():
         (session["user_id"],),
     ).fetchall()
     db.close()
-    return jsonify([{"id": r["id"], "title": r["title"], "updated_at": r["updated_at"]} for r in rows])
+    return jsonify([{"id": r["id"], "title": r["title"] or "New chat", "updated_at": r["updated_at"]} for r in rows])
 
 
 @bp.route("/api/conversations", methods=["POST"])
