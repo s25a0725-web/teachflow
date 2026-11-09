@@ -338,6 +338,7 @@ def index():
         "ai_hello", "ai_subheading", "ai_stop", "ai_account_settings",
         "ai_suggest_lesson", "ai_suggest_exam", "ai_suggest_worksheet",
         "ai_suggest_letter", "ai_suggest_attendance", "ai_suggest_materials",
+        "ai_like", "ai_dislike", "ai_share", "ai_feedback_saved",
     ]
     return render_template(
         "ai_assistant.html",
@@ -436,12 +437,36 @@ def messages(cid):
         db.close()
         return jsonify({"error": "not_found"}), 404
     rows = db.execute(
-        "SELECT id, role, content, tool, created_at FROM ai_messages WHERE conversation_id = ? ORDER BY id",
+        "SELECT id, role, content, tool, feedback, created_at FROM ai_messages WHERE conversation_id = ? ORDER BY id",
         (cid,),
     ).fetchall()
     db.close()
     return jsonify([{"id": r["id"], "role": r["role"], "content": r["content"],
-                     "tool": r["tool"], "created_at": r["created_at"]} for r in rows])
+                     "tool": r["tool"], "feedback": r["feedback"],
+                     "created_at": r["created_at"]} for r in rows])
+
+
+@bp.route("/api/messages/<int:mid>/feedback", methods=["POST"])
+@login_required
+def feedback(mid):
+    """Persist like/dislike on an assistant message (like | dislike | null)."""
+    data = request.get_json(silent=True) or {}
+    value = data.get("feedback")
+    if value not in ("like", "dislike", None):
+        return jsonify({"error": "bad_feedback"}), 400
+    db = get_db()
+    row = db.execute(
+        "SELECT m.id FROM ai_messages m JOIN ai_conversations c ON m.conversation_id = c.id "
+        "WHERE m.id = ? AND c.teacher_id = ?",
+        (mid, session["user_id"]),
+    ).fetchone()
+    if not row:
+        db.close()
+        return jsonify({"error": "not_found"}), 404
+    db.execute("UPDATE ai_messages SET feedback = ? WHERE id = ?", (value, mid))
+    db.commit()
+    db.close()
+    return jsonify({"ok": True, "feedback": value})
 
 
 @bp.route("/api/messages/<int:mid>", methods=["POST"])

@@ -85,6 +85,20 @@ ok("edited content persisted", r and r[0]["content"] == "edited answer", r)
 r = c.post("/ai/api/messages/999999", json={"content": "x"})
 ok("update missing message -> 404", r.status_code == 404, r.status_code)
 
+# --- feedback (like / dislike) ---
+r = c.post(f"/ai/api/messages/{mid}/feedback", json={"feedback": "like"})
+ok("feedback like saved", r.get_json() == {"ok": True, "feedback": "like"}, r.get_json())
+r = c.get(f"/ai/api/conversations/{cid}/messages").get_json()
+ok("feedback persisted in history", r and r[0]["feedback"] == "like", r)
+r = c.post(f"/ai/api/messages/{mid}/feedback", json={"feedback": "dislike"})
+ok("feedback changed to dislike", r.get_json()["feedback"] == "dislike", r.get_json())
+r = c.post(f"/ai/api/messages/{mid}/feedback", json={"feedback": None})
+ok("feedback cleared", r.get_json()["feedback"] is None, r.get_json())
+r = c.post(f"/ai/api/messages/{mid}/feedback", json={"feedback": "bad"})
+ok("feedback rejects invalid value", r.status_code == 400, r.status_code)
+r = c.post("/ai/api/messages/999999/feedback", json={"feedback": "like"})
+ok("feedback on missing message -> 404", r.status_code == 404, r.status_code)
+
 # --- chat blocked without key ---
 r = c.post("/ai/api/chat", json={"message": "hi"})
 ok("chat returns no_key when unconfigured", r.status_code == 400 and r.get_json()["error"] == "no_key", (r.status_code, r.get_json()))

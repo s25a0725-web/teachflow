@@ -347,6 +347,9 @@
 }
 .msg-actions button svg { width: 12px; height: 12px; }
 .msg-actions button:hover { background: rgba(99, 102, 241, 0.35); }
+.msg-actions button.fb { width: auto; }
+.msg-actions button.fb.on { background: rgba(99, 102, 241, 0.45); color: #c7d2fe; }
+.msg-actions button.fb.on svg { fill: rgba(165, 180, 252, 0.5); }
 
 /* Typing + cursor */
 .ai-typing { display: inline-flex; gap: 4px; align-items: center; padding: 3px 0; }

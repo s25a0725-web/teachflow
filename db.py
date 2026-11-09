@@ -328,6 +328,7 @@ CREATE TABLE IF NOT EXISTS ai_messages (
     role TEXT NOT NULL,
     content TEXT NOT NULL,
     tool TEXT,
+    feedback TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 """
@@ -393,6 +394,9 @@ def init_db():
     ]:
         if col not in ta_cols:
             conn.execute(f"ALTER TABLE teacher_attendance ADD COLUMN {col} {typ}")
+    aim_cols = {r[1] for r in conn.execute("PRAGMA table_info(ai_messages)").fetchall()}
+    if "feedback" not in aim_cols:
+        conn.execute("ALTER TABLE ai_messages ADD COLUMN feedback TEXT")
     conn.commit()
     conn.close()
 
