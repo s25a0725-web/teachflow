@@ -6,22 +6,39 @@
 {% block content %}
 <div class="ai-app" id="aiApp">
   <aside class="ai-sidebar" id="aiSidebar">
+    <div class="ai-brand">
+      <div class="ai-brand-mark" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-ai"/></svg></div>
+      <div class="ai-brand-text">
+        <span class="ai-brand-name">{{ t('ai_title', lang) }}</span>
+        <span class="ai-brand-sub">{{ t('ai_tagline', lang) }}</span>
+      </div>
+    </div>
     <div class="ai-sidebar-top">
       <button type="button" class="ai-new" id="newChatBtn"><svg fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M12 5v14M5 12h14"/></svg><span>{{ t('ai_new_chat', lang) }}</span></button>
-      <div class="ai-search-wrap"><input id="convSearch" placeholder="{{ t('ai_search', lang) }}…" autocomplete="off"></div>
+      <div class="ai-search-wrap"><svg class="ai-search-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="convSearch" placeholder="{{ t('ai_search', lang) }}…" autocomplete="off"></div>
     </div>
     <div class="ai-sidebar-body">
-      <button type="button" class="ai-section-head" id="toolsToggle"><span>{{ t('ai_select_tool', lang) }}</span><span class="caret" id="toolsCaret">▾</span></button>
+      <button type="button" class="ai-section-head" id="toolsToggle"><span>{{ t('ai_select_tool', lang) }}</span><svg class="caret" id="toolsCaret" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div class="ai-tools" id="toolList"></div>
       <div class="ai-section-head"><span>{{ t('ai_history', lang) }}</span></div>
       <div class="ai-convs" id="convList"></div>
+    </div>
+    <div class="ai-sidebar-foot">
+      <div class="ai-side-user">
+        <div class="ai-side-user-avatar">{{ (session.get('name') or '?')[:1] }}</div>
+        <div class="ai-side-user-info">
+          <span class="ai-side-user-name">{{ session.get('name') }}</span>
+          <span class="ai-side-user-role">{{ session.get('role') or 'teacher' }}</span>
+        </div>
+        <a class="ai-side-user-settings" href="{{ url_for('views.settings') if session.get('role') == 'admin' else '#' }}" title="{{ t('ai_account_settings', lang) }}" aria-label="{{ t('ai_account_settings', lang) }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-settings"/></svg></a>
+      </div>
     </div>
   </aside>
   <div class="ai-backdrop" id="aiBackdrop"></div>
 
   <section class="ai-chat">
     <header class="ai-top">
-      <button type="button" class="ai-collapse" id="collapseBtn" title="Toggle sidebar">☰</button>
+      <button type="button" class="ai-collapse" id="collapseBtn" title="Toggle sidebar" aria-label="Toggle sidebar"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-menu"/></svg></button>
       <div class="ai-top-title" id="convTitle">{{ t('ai_title', lang) }}</div>
       <span class="ai-model">{{ model_name }}</span>
     </header>
@@ -30,9 +47,9 @@
     {% endif %}
     <div class="ai-messages" id="msgArea">
       <div class="ai-welcome" id="emptyState">
-        <div class="ai-logo">✨</div>
-        <h1>{{ t('ai_title', lang) }}</h1>
-        <p class="tagline">{{ t('ai_tagline', lang) }}</p>
+        <div class="ai-logo" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-ai"/></svg></div>
+        <h1>{{ t('ai_hello', lang) }}</h1>
+        <p class="tagline">{{ t('ai_subheading', lang) }}</p>
         <div class="ai-suggest" id="suggestList"></div>
       </div>
     </div>
@@ -41,10 +58,12 @@
       <div class="ai-tool-active" id="toolActive" style="display:none"></div>
       <div class="ai-attach-bar" id="attachBar" style="display:none"></div>
       <div class="ai-input-row">
-        <button type="button" class="ai-btn-ico" id="attachBtn" title="{{ t('ai_attach', lang) }}">📎</button>
+        <button type="button" class="ai-btn-ico" id="attachBtn" title="{{ t('ai_attach', lang) }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L14 5.5a3.3 3.3 0 0 1 4.7 4.7L10 19"/></svg></button>
         <textarea id="msgInput" rows="1" placeholder="{{ t('ai_placeholder', lang) }}"></textarea>
         <button type="button" class="ai-btn-send" id="sendBtn">{{ t('ai_send', lang) }}</button>
+        <button type="button" class="ai-btn-stop" id="stopBtn" style="display:none" title="{{ t('ai_stop', lang) }}"><svg fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></button>
       </div>
+      <div class="ai-composer-hint">Enter to send · Shift+Enter for a new line</div>
     </footer>
   </section>
 </div>
@@ -59,15 +78,15 @@
   var STR = {{ strings_json | safe }};
   var configured = {{ 'true' if configured else 'false' }};
   var TASKS = [
-    { id: 'lesson_planner', icon: 'plan', label: STR.ai_task_lesson },
-    { id: 'worksheet', icon: 'sheet', label: STR.ai_task_worksheet },
-    { id: 'exam_paper', icon: 'exam', label: STR.ai_task_exam },
-    { id: 'parent_comm', icon: 'parent', label: STR.ai_task_parent },
-    { id: 'attendance_summary', icon: 'staff', label: STR.ai_task_attendance },
-    { id: 'translator', icon: 'lang', label: STR.ai_task_translate }
+    { id: 'lesson_planner', icon: 'plan', label: STR.ai_suggest_lesson },
+    { id: 'exam_paper', icon: 'exam', label: STR.ai_suggest_exam },
+    { id: 'worksheet', icon: 'sheet', label: STR.ai_suggest_worksheet },
+    { id: 'official_letter', icon: 'mail', label: STR.ai_suggest_letter },
+    { id: 'attendance_summary', icon: 'staff', label: STR.ai_suggest_attendance },
+    { id: 'teaching_materials', icon: 'book', label: STR.ai_suggest_materials }
   ];
 
-  var state = { convId: null, tool: 'chat', context: null, contextName: '' };
+  var state = { convId: null, tool: 'chat', context: null, contextName: '', streaming: false, abortCtrl: null };
   function $(id) { return document.getElementById(id); }
   var el = {
     app: $('aiApp'), collapseBtn: $('collapseBtn'), backdrop: $('aiBackdrop'),
@@ -75,9 +94,9 @@
     convList: $('convList'), convSearch: $('convSearch'), convTitle: $('convTitle'),
     msgArea: $('msgArea'), emptyState: $('emptyState'),
     toolForm: $('toolForm'), msgInput: $('msgInput'), sendBtn: $('sendBtn'),
-    attachBtn: $('attachBtn'), fileInput: $('fileInput'), attachBar: $('attachBar'),
-    suggestList: $('suggestList'), newChatBtn: $('newChatBtn'), aiToast: $('aiToast'),
-    toolActive: $('toolActive')
+    stopBtn: $('stopBtn'), attachBtn: $('attachBtn'), fileInput: $('fileInput'),
+    attachBar: $('attachBar'), suggestList: $('suggestList'), newChatBtn: $('newChatBtn'),
+    aiToast: $('aiToast'), toolActive: $('toolActive')
   };
   var conversations = [];
 
@@ -105,7 +124,8 @@
     for (var i = 0; i < blocks.length; i++) {
       if (i % 2 === 1) {
         var code = blocks[i].replace(/^\w*\n/, '');
-        out += '<div class="code-block"><pre>' + esc(code) + '</pre><button type="button" class="code-copy">Copy</button></div>';
+        var lang = (blocks[i].match(/^(\w+)/) || [])[1] || '';
+        out += '<div class="code-block"' + (lang ? ' data-lang="' + esc(lang) + '"' : '') + '><pre>' + esc(code) + '</pre><button type="button" class="code-copy">' + (STR.ai_copy || 'Copy') + '</button></div>';
         continue;
       }
       out += renderInline(blocks[i]);
@@ -159,11 +179,11 @@
     var acts = document.createElement('div');
     acts.className = 'msg-actions';
     if (role === 'ai') {
-      acts.innerHTML = '<button type="button" data-a="copy">' + STR.ai_copy + '</button>'
-        + '<button type="button" data-a="edit">' + STR.ai_edit + '</button>'
+      acts.innerHTML = '<button type="button" data-a="copy"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>' + STR.ai_copy + '</button>'
+        + '<button type="button" data-a="regen"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/></svg>' + STR.ai_regenerate + '</button>'
         + '<button type="button" data-a="pdf">' + STR.ai_download_pdf + '</button>'
         + '<button type="button" data-a="docx">' + STR.ai_download_docx + '</button>'
-        + '<button type="button" data-a="regen">' + STR.ai_regenerate + '</button>';
+        + '<button type="button" data-a="edit">' + STR.ai_edit + '</button>';
     } else {
       acts.innerHTML = '<button type="button" data-a="copy">' + STR.ai_copy + '</button>'
         + '<button type="button" data-a="edit">' + STR.ai_edit + '</button>';
@@ -175,7 +195,7 @@
     el.msgArea.scrollTop = el.msgArea.scrollHeight;
     acts.addEventListener('click', function (e) {
       var a = e.target.getAttribute('data-a'); if (!a) return;
-      if (a === 'copy') { navigator.clipboard.writeText(raw); }
+      if (a === 'copy') { navigator.clipboard.writeText(raw); toast(STR.ai_copy + ' ✓'); }
       else if (a === 'edit') { editMessage(wrap, raw); }
       else if (a === 'pdf') { downloadDoc(raw, 'pdf'); }
       else if (a === 'docx') { downloadDoc(raw, 'docx'); }
@@ -222,19 +242,25 @@
       .catch(function () { toast('Download failed', true); });
   }
 
-  // ---- Streaming send ----
+  // ---- Streaming send (with stop) ----
+  function setStreaming(on) {
+    state.streaming = on;
+    el.sendBtn.style.display = on ? 'none' : '';
+    el.stopBtn.style.display = on ? '' : 'none';
+  }
   function sendMessage(message, tool, context) {
-    if (!message.trim()) return;
+    if (!message.trim() || state.streaming) return;
     var body = { message: message, tool: tool };
     if (state.convId) body.conversation_id = state.convId;
     if (context) body.context = context;
     addMsg('user', esc(message), message);
     clearAttach();
-    el.sendBtn.disabled = true;
-    var ai = addMsg('ai', '<span class="ai-cursor"></span>', '');
+    state.abortCtrl = new AbortController();
+    setStreaming(true);
+    var ai = addMsg('ai', '<span class="ai-typing"><span></span><span></span><span></span></span>', '');
     ai.body.innerHTML = '';
 
-    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: state.abortCtrl.signal })
       .then(function (r) {
         if (!r.ok) { return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(errText(j.error)); }); }
         var reader = r.body.getReader();
@@ -267,22 +293,31 @@
         ai.wrap.setAttribute('data-raw', full || '');
       })
       .catch(function (err) {
+        if (err && err.name === 'AbortError') {
+          var partial = ai.wrap.getAttribute('data-raw');
+          ai.body.innerHTML = renderMd(partial || '') + '<span class="ai-cursor"></span>';
+          return;
+        }
         ai.body.innerHTML = esc(err.message || 'Error');
       })
       .finally(function () {
-        el.sendBtn.disabled = false;
+        setStreaming(false);
+        state.abortCtrl = null;
         loadConversations();
         if (state.convId) selectConversation(state.convId);
       });
   }
 
   function regenerate() {
-    if (!state.convId) return;
-    fetch('/ai/api/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: state.convId }) })
+    if (!state.convId || state.streaming) return;
+    state.abortCtrl = new AbortController();
+    setStreaming(true);
+    var ai = addMsg('ai', '<span class="ai-typing"><span></span><span></span><span></span></span>', '');
+    ai.body.innerHTML = '';
+    fetch('/ai/api/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: state.convId }), signal: state.abortCtrl.signal })
       .then(function (r) {
         if (!r.ok) { return r.json().then(function (j) { throw new Error(errText(j.error)); }); }
         var reader = r.body.getReader(); var dec = new TextDecoder(); var buf = '', full = '';
-        var ai = addMsg('ai', '<span class="ai-cursor"></span>', ''); ai.body.innerHTML = '';
         function pump() {
           return reader.read().then(function (res) {
             if (res.done) return;
@@ -295,6 +330,7 @@
                 var d = JSON.parse(ln.slice(6));
                 if (d.error) throw new Error(errText(d.error));
                 if (d.delta) { full += d.delta; ai.body.innerHTML = renderMd(full) + '<span class="ai-cursor"></span>'; el.msgArea.scrollTop = el.msgArea.scrollHeight; }
+                if (d.done) { state.convId = d.conversation_id; }
               });
             }
             return pump();
@@ -302,7 +338,16 @@
         }
         return pump().then(function () { ai.body.innerHTML = renderMd(full); ai.wrap.setAttribute('data-raw', full); });
       })
-      .catch(function (err) { toast(err.message, true); });
+      .catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        toast(err.message, true);
+      })
+      .finally(function () {
+        setStreaming(false);
+        state.abortCtrl = null;
+        loadConversations();
+        if (state.convId) selectConversation(state.convId);
+      });
   }
 
   // ---- Tools ----
@@ -365,7 +410,7 @@
       var c = document.createElement('button');
       c.type = 'button';
       c.className = 'task';
-      c.innerHTML = icon(tk.icon) + '<span>' + esc(tk.label) + '</span>';
+      c.innerHTML = '<span class="task-ico">' + icon(tk.icon) + '</span><span class="task-label">' + esc(tk.label) + '</span><span class="task-arrow">→</span>';
       c.addEventListener('click', function () { selectTool(tk.id); });
       el.suggestList.appendChild(c);
     });
@@ -389,7 +434,7 @@
     filtered.forEach(function (c) {
       var d = document.createElement('div');
       d.className = 'ai-conv' + (state.convId === c.id ? ' on' : '');
-      d.innerHTML = '<span class="t">' + esc(c.title) + '</span>'
+      d.innerHTML = '<svg class="ai-conv-ico" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H5l-2 2V11.5A8.5 8.5 0 0 1 11.5 3h1A8.5 8.5 0 0 1 21 11.5z"/></svg><span class="t">' + esc(c.title) + '</span>'
         + '<span class="acts"><button type="button" data-a="rename" title="' + STR.ai_rename + '">✎</button><button type="button" data-a="del" title="' + STR.ai_delete + '">✕</button></span>';
       d.addEventListener('click', function (e) {
         if (e.target.getAttribute('data-a')) return;
@@ -433,7 +478,7 @@
   }
   function resetChat() {
     state.convId = null; state.tool = 'chat'; clearAttach();
-    el.msgArea.innerHTML = '<div class="ai-welcome" id="emptyState"><div class="ai-logo">✨</div><h1>' + STR.ai_new_chat + '</h1><p class="tagline">' + STR.ai_empty_state + '</p><div class="ai-suggest" id="suggestList"></div></div>';
+    el.msgArea.innerHTML = '<div class="ai-welcome" id="emptyState"><div class="ai-logo" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-ai"/></svg></div><h1>' + STR.ai_hello + '</h1><p class="tagline">' + STR.ai_subheading + '</p><div class="ai-suggest" id="suggestList"></div></div>';
     el.emptyState = $('emptyState');
     el.suggestList = $('suggestList');
     el.convTitle.textContent = STR.ai_new_chat;
@@ -451,19 +496,28 @@
   }
 
   // ---- Wire up ----
+  function autoResize() {
+    el.msgInput.style.height = 'auto';
+    el.msgInput.style.height = Math.min(el.msgInput.scrollHeight, 170) + 'px';
+  }
   el.sendBtn.addEventListener('click', function () {
     sendMessage(el.msgInput.value, state.tool, state.context);
     el.msgInput.value = '';
+    autoResize();
+  });
+  el.stopBtn.addEventListener('click', function () {
+    if (state.abortCtrl) state.abortCtrl.abort();
   });
   el.msgInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.sendBtn.click(); }
   });
+  el.msgInput.addEventListener('input', autoResize);
   el.convSearch.addEventListener('input', renderConversations);
   el.newChatBtn.addEventListener('click', resetChat);
   el.attachBtn.addEventListener('click', function () { el.fileInput.click(); });
   el.toolsToggle.addEventListener('click', function () {
     el.toolList.classList.toggle('collapsed');
-    el.toolsCaret.textContent = el.toolList.classList.contains('collapsed') ? '▸' : '▾';
+    el.toolsCaret.style.transform = el.toolList.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
   });
   el.collapseBtn.addEventListener('click', function () {
     if (window.innerWidth > 860) { el.app.classList.toggle('collapsed'); }

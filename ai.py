@@ -335,6 +335,9 @@ def index():
         "save", "cancel", "ai_tagline",
         "ai_task_lesson", "ai_task_worksheet", "ai_task_exam",
         "ai_task_parent", "ai_task_attendance", "ai_task_translate",
+        "ai_hello", "ai_subheading", "ai_stop", "ai_account_settings",
+        "ai_suggest_lesson", "ai_suggest_exam", "ai_suggest_worksheet",
+        "ai_suggest_letter", "ai_suggest_attendance", "ai_suggest_materials",
     ]
     return render_template(
         "ai_assistant.html",
