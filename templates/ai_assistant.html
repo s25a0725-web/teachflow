@@ -2,6 +2,8 @@
 {% block title %}{{ t('ai_title', lang) }} · {{ brand_name }}{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='ai.css') }}">
+<script src="{{ url_for('static', filename='marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='purify.min.js') }}"></script>
 {% endblock %}
 {% block content %}
 <div class="ai-app" id="aiApp">
@@ -116,27 +118,84 @@
   function toolById(id) { for (var i = 0; i < TOOLS.length; i++) if (TOOLS[i].id === id) return TOOLS[i]; return TOOLS[0]; }
   function icon(name) { return '<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="#i-' + name + '"/></svg>'; }
 
-  // ---- Markdown renderer ----
+  // ---- Markdown renderer (marked + DOMPurify, sanitized) ----
   function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function renderMd(src) {
-    var blocks = String(src || '').split(/```/);
-    var out = '';
-    for (var i = 0; i < blocks.length; i++) {
-      if (i % 2 === 1) {
-        var code = blocks[i].replace(/^\w*\n/, '');
-        var lang = (blocks[i].match(/^(\w+)/) || [])[1] || '';
-        out += '<div class="code-block"' + (lang ? ' data-lang="' + esc(lang) + '"' : '') + '><pre>' + esc(code) + '</pre><button type="button" class="code-copy">' + (STR.ai_copy || 'Copy') + '</button></div>';
-        continue;
-      }
-      out += renderInline(blocks[i]);
-    }
-    return out;
+
+  var HL_KEYWORDS = {
+    python: 'def return if elif else for while import from class try except finally with as in not and or is lambda pass break continue yield global nonlocal True False None self print len range str int float list dict set tuple',
+    javascript: 'var let const function return if else for while do switch case break continue new typeof instanceof in of class extends super import export default try catch finally throw async await this null undefined true false',
+    js: 'var let const function return if else for while do switch case break continue new typeof instanceof in of class extends super import export default try catch finally throw async await this null undefined true false',
+    json: 'true false null',
+    sql: 'select from where insert into values update set delete create table join left right inner outer on group by order having limit and or not null distinct count sum avg min max as',
+    html: 'html head body div span p a img table tr td th ul ol li h1 h2 h3 h4 h5 h6 form input button textarea select option label script style link meta title header nav main section article footer',
+    css: 'color background font margin padding border display position flex grid width height top left right bottom z-index',
+    bash: 'echo cd ls rm mkdir cp mv grep cat sudo apt pip python git'
+  };
+  function hlCommentRe(lang) {
+    if (lang === 'python' || lang === 'bash') return '#[^\\n]*';
+    if (lang === 'sql') return '--[^\\n]*';
+    return '\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/';
   }
-  function renderInline(t) {
+  function highlight(code, lang) {
+    var e = esc(code);
+    var kw = HL_KEYWORDS[lang];
+    if (!kw) return e;
+    var re = new RegExp(
+      '(' + hlCommentRe(lang) + ')|("[^"\\n]*"|\'[^\'\\n]*\')|\\b(' + kw.split(' ').join('|') + ')\\b|(\\b\\d+(?:\\.\\d+)?\\b)',
+      'g'
+    );
+    return e.replace(re, function (m, com, str, kwd, num) {
+      if (com !== undefined && com) return '<span class="tok-com">' + com + '</span>';
+      if (str !== undefined && str) return '<span class="tok-str">' + str + '</span>';
+      if (kwd !== undefined && kwd) return '<span class="tok-key">' + kwd + '</span>';
+      if (num !== undefined && num) return '<span class="tok-num">' + num + '</span>';
+      return m;
+    });
+  }
+  function renderCode(block) {
+    var lang = '';
+    var body = block;
+    var m = block.match(/^(\w+)[ \t]*\n/);
+    if (m) { lang = m[1]; body = block.slice(m[0].length); }
+    var hl = highlight(body, lang.toLowerCase());
+    return '<div class="code-block"' + (lang ? ' data-lang="' + esc(lang) + '"' : '') + '><pre>' + hl + '</pre><button type="button" class="code-copy">' + (STR.ai_copy || 'Copy') + '</button></div>';
+  }
+  function renderText(t) {
+    if (!window.marked) return legacyInline(t);
+    var math = [];
+    var src = String(t || '').replace(/\$\$([\s\S]+?)\$\$/g, function (mm, g) {
+      math.push('<span class="math math-block">' + esc(g) + '</span>');
+      return '\u0000M' + (math.length - 1) + '\u0000';
+    });
+    src = src.replace(/\$([^$\n]+?)\$/g, function (mm, g) {
+      math.push('<span class="math">' + esc(g) + '</span>');
+      return '\u0000M' + (math.length - 1) + '\u0000';
+    });
+    var html = marked.parse(src);
+    return html.replace(/\u0000M(\d+)\u0000/g, function (mm, i) { return math[+i] || ''; });
+  }
+  function renderMd(src) {
+    var s = String(src || '');
+    var parts = s.split(/```/);
+    var out = '';
+    for (var i = 0; i < parts.length; i++) {
+      if (i % 2 === 1) out += renderCode(parts[i]);
+      else out += renderText(parts[i]);
+    }
+    return window.DOMPurify ? DOMPurify.sanitize(out) : out;
+  }
+  function legacyInline(t) {
     var lines = t.split('\n');
     var out = '', inUl = false, inOl = false, para = '';
     function flushPara() { if (para) { out += '<p>' + para + '</p>'; para = ''; } }
     function closeLists() { if (inUl) { out += '</ul>'; inUl = false; } if (inOl) { out += '</ol>'; inOl = false; } }
+    function inline(s) {
+      s = esc(s);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      return s;
+    }
     for (var i = 0; i < lines.length; i++) {
       var ln = lines[i];
       var h = ln.match(/^(#{1,4})\s+(.*)/);
@@ -151,13 +210,6 @@
     }
     flushPara(); closeLists();
     return out;
-  }
-  function inline(s) {
-    s = esc(s);
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    return s;
   }
 
   // ---- Message rendering ----
