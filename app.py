@@ -65,6 +65,7 @@ def create_app():
     from analytics import bp as analytics_bp
     from attendance import bp as attendance_bp
     from ai import bp as ai_bp
+    from rph import bp as rph_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(analytics_bp)
     app.register_blueprint(attendance_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(rph_bp)
 
     @app.context_processor
     def inject_globals():

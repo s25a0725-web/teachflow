@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}RPH · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.rph-wrap { max-width: 900px; margin: 0 auto; }
+.rph-card { padding: 1.4rem 1.5rem; }
+.rph-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.rph-grid .full { grid-column: 1 / -1; }
+.rph-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: var(--muted); }
+.rph-grid input, .rph-grid textarea, .rph-grid select {
+  padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.9rem; font-family: inherit;
+}
+.rph-grid input:focus, .rph-grid textarea:focus { outline: none; border-color: var(--accent); }
+.rph-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.rph-actions .btn { margin: 0; }
+.rph-doc { margin-top: 20px; display: none; }
+.rph-doc.show { display: block; }
+.rph-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.rph-doc-title { font-weight: 800; font-size: 1.15rem; color: #fff; }
+.rph-doc-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.rph-sec { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; background: rgba(255,255,255,0.02); }
+.rph-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.rph-sec-head h3 { margin: 0; font-size: 0.92rem; color: #c7d2fe; font-weight: 700; }
+.rph-sec textarea { width: 100%; min-height: 64px; resize: vertical; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit; line-height: 1.5; }
+.rph-sec textarea:focus { outline: none; border-color: var(--accent); }
+.rph-regen { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 4px 10px; border-radius: 7px; }
+.rph-regen:hover { color: #fff; border-color: var(--accent); }
+.rph-list { display: flex; flex-direction: column; gap: 6px; }
+.rph-list-item { display: flex; gap: 6px; align-items: center; }
+.rph-list-item .num { color: var(--muted); font-size: 0.8rem; min-width: 20px; }
+.rph-list-item input { flex: 1; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.85rem; }
+.rph-list-item .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+.rph-list-item .del:hover { color: #fb7185; }
+.rph-add { background: none; border: 1px dashed var(--border-strong); color: var(--muted); cursor: pointer; font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; margin-top: 6px; }
+.rph-add:hover { color: #fff; }
+.rph-steps { display: flex; flex-direction: column; gap: 6px; }
+.rph-step-row { display: grid; grid-template-columns: 90px 70px 1fr; gap: 6px; }
+.rph-step-row input, .rph-step-row textarea { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.82rem; font-family: inherit; }
+.rph-meta { display: grid; grid-template-columns: 150px 1fr; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+.rph-meta > div { padding: 7px 11px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.rph-meta > div:nth-child(odd) { background: rgba(99,102,241,0.1); color: var(--muted); font-weight: 600; }
+.rph-meta > div:nth-last-child(-n+2) { border-bottom: none; }
+.rph-meta input { width: 100%; background: none; border: none; color: var(--text); font-size: 0.85rem; font-family: inherit; }
+.rph-meta input:focus { outline: none; }
+.rph-hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+@media print { .rph-wrap form, .rph-doc-head, .rph-doc-tools, .rph-regen, .rph-add, .del { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="rph-wrap">
+  <h2>{{ t('rph_title', lang) }}</h2>
+  <p class="rph-hint">{{ t('rph_subtitle', lang) }}</p>
+
+  <div class="card rph-card">
+    <div class="rph-grid">
+      <label>{{ t('subject', lang) }}<input id="f_subject" placeholder="cth: Matematik"></label>
+      <label>{{ t('grade', lang) }}<input id="f_class" placeholder="cth: Tahun 3"></label>
+      <label>{{ t('rph_date', lang) }}<input id="f_date" type="date"></label>
+      <label>{{ t('rph_day', lang) }}<input id="f_day" placeholder="cth: Isnin"></label>
+      <label>{{ t('ai_duration', lang) }}<input id="f_duration" value="60 minit"></label>
+      <label>{{ t('rph_lang', lang) }}<select id="f_lang">
+        <option value="ms" selected>Bahasa Malaysia</option>
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+      </select></label>
+      <label class="full">{{ t('topic', lang) }}<input id="f_topic" placeholder="cth: Pecahan"></label>
+    </div>
+    <div class="rph-actions">
+      <button type="button" class="btn" id="genBtn">{{ t('rph_generate', lang) }}</button>
+      <span class="rph-hint" id="genStatus" style="display:none"></span>
+    </div>
+  </div>
+
+  <div class="rph-doc" id="doc">
+    <div class="rph-doc-head">
+      <div class="rph-doc-title">{{ t('rph_preview', lang) }}</div>
+      <div class="rph-doc-tools">
+        <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+        <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+        <button type="button" class="btn small" id="printBtn">🖨 {{ t('rph_print', lang) }}</button>
+        <button type="button" class="btn small" id="saveBtn">{{ t('save', lang) }}</button>
+      </div>
+    </div>
+    <div id="docBody"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var SECTIONS = {{ sections_json | safe }};
+  var META = {{ meta_json | safe }};
+  var TEACHER = {{ teacher_json | safe }};
+  var rph = null;
+
+  function $(id) { return document.getElementById(id); }
+  function toast(msg, err) {
+    var t = document.createElement('div');
+    t.className = 'ai-toast' + (err ? ' err' : '');
+    t.textContent = msg; t.style.display = 'block';
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  function metaFields() {
+    return {
+      school: TEACHER.school || 'SJK(T) Sepang',
+      teacher: TEACHER.name || '',
+      subject: $('f_subject').value.trim(),
+      class: $('f_class').value.trim(),
+      date: $('f_date').value,
+      day: $('f_day').value.trim(),
+      duration: $('f_duration').value.trim() || '60 minit',
+      topic: $('f_topic').value.trim(),
+      lang: $('f_lang').value
+    };
+  }
+
+  function buildDoc(data) {
+    rph = data;
+    var body = $('docBody');
+    body.innerHTML = '';
+    // meta header
+    var meta = document.createElement('div');
+    meta.className = 'rph-meta';
+    META.forEach(function (m) {
+      var k = m[0], label = m[1];
+      var dv = document.createElement('div'); dv.textContent = label;
+      var di = document.createElement('div');
+      var inp = document.createElement('input');
+      inp.value = data[k] || '';
+      inp.addEventListener('input', function () { data[k] = inp.value; });
+      di.appendChild(inp);
+      meta.appendChild(dv); meta.appendChild(di);
+    });
+    body.appendChild(meta);
+
+    SECTIONS.forEach(function (s) {
+      var key = s[0], label = s[1], kind = s[2];
+      var sec = document.createElement('div');
+      sec.className = 'rph-sec';
+      var head = document.createElement('div');
+      head.className = 'rph-sec-head';
+      var h = document.createElement('h3'); h.textContent = label;
+      var rg = document.createElement('button');
+      rg.type = 'button'; rg.className = 'rph-regen';
+      rg.textContent = '↻ {{ t('ai_regenerate', lang) }}';
+      rg.addEventListener('click', function () { regenSection(key, sec, label); });
+      head.appendChild(h); head.appendChild(rg);
+      sec.appendChild(head);
+
+      if (kind === 'text') {
+        var ta = document.createElement('textarea');
+        ta.value = data[key] || '';
+        ta.addEventListener('input', function () { data[key] = ta.value; });
+        sec.appendChild(ta);
+      } else if (kind === 'list') {
+        var list = document.createElement('div');
+        list.className = 'rph-list';
+        function renderList() {
+          list.innerHTML = '';
+          var arr = data[key] || [];
+          arr.forEach(function (item, i) {
+            var row = document.createElement('div');
+            row.className = 'rph-list-item';
+            var num = document.createElement('span'); num.className = 'num'; num.textContent = (i + 1) + '.';
+            var inp = document.createElement('input');
+            inp.value = item;
+            inp.addEventListener('input', function () { arr[i] = inp.value; });
+            var del = document.createElement('button');
+            del.type = 'button'; del.className = 'del'; del.textContent = '✕';
+            del.addEventListener('click', function () { arr.splice(i, 1); data[key] = arr; renderList(); });
+            row.appendChild(num); row.appendChild(inp); row.appendChild(del);
+            list.appendChild(row);
+          });
+          var add = document.createElement('button');
+          add.type = 'button'; add.className = 'rph-add';
+          add.textContent = '+ {{ t('rph_add_item', lang) }}';
+          add.addEventListener('click', function () { arr.push(''); data[key] = arr; renderList(); });
+          list.appendChild(add);
+        }
+        sec.appendChild(list);
+        renderList();
+      } else if (kind === 'steps') {
+        var steps = document.createElement('div');
+        steps.className = 'rph-steps';
+        function renderSteps() {
+          steps.innerHTML = '';
+          var arr = data[key] || [];
+          arr.forEach(function (st, i) {
+            var row = document.createElement('div');
+            row.className = 'rph-step-row';
+            var s1 = document.createElement('input'); s1.value = st.step || ''; s1.placeholder = 'Langkah';
+            s1.addEventListener('input', function () { st.step = s1.value; });
+            var s2 = document.createElement('input'); s2.value = st.time || ''; s2.placeholder = 'Masa';
+            s2.addEventListener('input', function () { st.time = s2.value; });
+            var s3 = document.createElement('textarea'); s3.value = st.detail || ''; s3.placeholder = 'Aktiviti';
+            s3.addEventListener('input', function () { st.detail = s3.value; });
+            row.appendChild(s1); row.appendChild(s2); row.appendChild(s3);
+            steps.appendChild(row);
+          });
+          var add = document.createElement('button');
+          add.type = 'button'; add.className = 'rph-add';
+          add.textContent = '+ {{ t('rph_add_step', lang) }}';
+          add.addEventListener('click', function () { arr.push({ step: '', time: '', detail: '' }); data[key] = arr; renderSteps(); });
+          steps.appendChild(add);
+        }
+        sec.appendChild(steps);
+        renderSteps();
+      }
+      body.appendChild(sec);
+    });
+    $('doc').classList.add('show');
+    $('doc').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function regenSection(key, sec, label) {
+    var fields = metaFields();
+    fetch('/rph/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: fields, rph: rph, section: key, lang: fields.lang }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.ok) { rph[key] = j.value; buildDoc(rph); }
+        else toast('Regenerate failed', true);
+      })
+      .catch(function () { toast('Regenerate failed', true); });
+  }
+
+  $('genBtn').addEventListener('click', function () {
+    var fields = metaFields();
+    if (!fields.topic && !fields.subject) { toast('{{ t('rph_need_topic', lang) }}', true); return; }
+    $('genStatus').style.display = 'inline';
+    $('genStatus').textContent = '{{ t('ai_thinking', lang) }}';
+    fetch('/rph/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        $('genStatus').style.display = 'none';
+        if (j.rph) buildDoc(j.rph);
+        else toast('Generation failed', true);
+      })
+      .catch(function () { $('genStatus').style.display = 'none'; toast('Generation failed', true); });
+  });
+
+  function download(fmt) {
+    if (!rph) return;
+    fetch('/rph/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rph: rph, format: fmt }) })
+      .then(function (r) { if (!r.ok) throw 0; return r.blob(); })
+      .then(function (b) {
+        var u = URL.createObjectURL(b);
+        var a = document.createElement('a');
+        a.href = u; a.download = (fmt === 'pdf' ? 'RPH.pdf' : 'RPH.docx');
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(u);
+      })
+      .catch(function () { toast('Download failed', true); });
+  }
+  $('pdfBtn').addEventListener('click', function () { download('pdf'); });
+  $('docxBtn').addEventListener('click', function () { download('docx'); });
+  $('printBtn').addEventListener('click', function () { window.print(); });
+  $('saveBtn').addEventListener('click', function () {
+    if (!rph) return;
+    fetch('/rph/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rph: rph }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j.ok) toast('{{ t('rph_saved', lang) }} ✓'); else toast('Save failed', true); })
+      .catch(function () { toast('Save failed', true); });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}RPH · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.rph-print { max-width: 800px; margin: 0 auto; }
+.rph-print h1 { text-align: center; font-size: 1.4rem; margin: 0 0 2px; }
+.rph-print .school { text-align: center; color: var(--muted); margin: 0 0 14px; }
+.rph-print h2 { font-size: 1.05rem; color: #1e3a8a; margin: 16px 0 6px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.rph-print ol, .rph-print ul { margin: 6px 0; padding-left: 22px; }
+.rph-print li { margin: 3px 0; }
+.rph-print p { margin: 6px 0; line-height: 1.55; }
+.rph-print table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.rph-print th, .rph-print td { border: 1px solid #cbd5e1; padding: 6px 9px; font-size: 0.88rem; text-align: left; vertical-align: top; }
+.rph-print th { background: #eef2ff; }
+.rph-print .meta { width: 100%; border-collapse: collapse; }
+.rph-print .meta td { border: 1px solid #cbd5e1; padding: 5px 9px; font-size: 0.88rem; }
+.rph-print .meta td:first-child { background: #f8fafc; font-weight: 600; width: 150px; }
+.rph-print .no-print { text-align: center; margin-bottom: 16px; }
+@media print {
+  .sidebar, .topbar, .bg-grid, .glow, .wave, .wave-line, #fx, .no-print { display: none !important; }
+  .main { margin: 0 !important; padding: 0 !important; }
+  .rph-print h2 { color: #000; }
+  .rph-print th, .rph-print td { color: #000; }
+  body { background: #fff !important; }
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="rph-print">
+  <div class="no-print">
+    <button type="button" class="btn" onclick="window.print()">{{ t('rph_print', lang) }}</button>
+    <a class="btn" href="{{ url_for('rph.index') }}">{{ t('back', lang) }}</a>
+  </div>
+  <div class="school">{{ rph.get('school') or '' }}</div>
+  <h1>RANCANGAN PENGAJARAN HARIAN</h1>
+  <div class="school">{{ rph.get('topic') or '' }}</div>
+
+  <table class="meta">
+    {% for key, label in meta %}
+    <tr><td>{{ label }}</td><td>{{ rph.get(key) or '' }}</td></tr>
+    {% endfor %}
+  </table>
+
+  {% for key, label, kind in sections %}
+  <h2>{{ label }}</h2>
+  {% if kind == 'list' %}
+    <ol>
+      {% for it in rph.get(key) or [] %}<li>{{ it }}</li>{% endfor %}
+    </ol>
+  {% elif kind == 'steps' %}
+    <table>
+      <thead><tr><th>Langkah</th><th>Masa</th><th>Aktiviti</th></tr></thead>
+      <tbody>
+        {% for s in rph.get(key) or [] %}
+        <tr><td>{{ s.get('step') if s is mapping else '' }}</td><td>{{ s.get('time') if s is mapping else '' }}</td><td>{{ s.get('detail') if s is mapping else s }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ rph.get(key) or '—' }}</p>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

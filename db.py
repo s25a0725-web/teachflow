@@ -331,6 +331,16 @@ CREATE TABLE IF NOT EXISTS ai_messages (
     feedback TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS rph_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    subject TEXT,
+    class_name TEXT,
+    rph_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 
