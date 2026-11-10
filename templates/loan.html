@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Rekod Pinjaman Perkakasan ICT · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.sdg-wrap { max-width: 960px; margin: 0 auto; }
+.sdg-card { padding: 1.4rem 1.5rem; }
+.sdg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sdg-grid .full { grid-column: 1 / -1; }
+.sdg-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
+.sdg-grid input, .sdg-grid textarea, .sdg-grid select { padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit; }
+.sdg-grid input:focus, .sdg-grid textarea:focus { outline: none; border-color: var(--accent); }
+.sdg-grid textarea { resize: vertical; min-height: 54px; }
+.sdg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.sdg-hint { font-size: 0.8rem; color: var(--muted); }
+.sdg-doc { margin-top: 20px; display: none; }
+.sdg-doc.show { display: block; }
+.sdg-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sdg-doc-title { font-weight: 800; font-size: 1.1rem; color: #fff; }
+.sdg-doc-tools { display: flex; gap: 8px; }
+.sdg-prev { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(255,255,255,0.02); }
+.sdg-prev h3 { margin: 0 0 10px; font-size: 1rem; color: #c7d2fe; text-align: center; }
+.sdg-prev table { width: 100%; border-collapse: collapse; }
+.sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
+.sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 38%; }
+.sdg-inv { margin-top: 22px; }
+.sdg-inv table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-inv th, .sdg-inv td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-inv th { color: var(--muted); background: rgba(255,255,255,0.03); }
+.sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-hist th { color: var(--muted); background: rgba(255,255,255,0.03); }
+@media print { .sdg-wrap form, .sdg-doc-head, .sdg-doc-tools, .sdg-inv, .sdg-hist { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="sdg-wrap">
+  <h2>Rekod Pinjaman Perkakasan ICT</h2>
+  <p class="sdg-hint">Contoh: "Pinjam laptop HP untuk kelas Tahun 5 pada Isnin, pulang Jumaat." AI akan mengambil butiran peralatan daripada inventori.</p>
+
+  <div class="card sdg-card">
+    <label class="sdg-grid"><span class="full">Arahan<textarea id="instr"></textarea></span></label>
+    <div class="sdg-actions"><button type="button" class="btn" id="autoBtn">✨ Lengkapkan Automatik</button><span class="sdg-hint" id="status"></span></div>
+  </div>
+
+  <div class="card sdg-card" id="formCard" style="display:none">
+    <div class="sdg-grid">
+      <label>NAMA PEMINJAM<input id="f_teacher_name"></label>
+      <label>NAMA PERKAKASAN<input id="f_equipment_name" list="invList"></label>
+      <label>KATEGORI<select id="f_category">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></label>
+      <label>NOMBOR SIRI<input id="f_serial_no"></label>
+      <label>KUANTITI<input id="f_quantity" type="number" value="1"></label>
+      <label>TARIKH PINJAM<input id="f_borrow_date" type="date"></label>
+      <label>MASA PINJAM<input id="f_borrow_time" type="time"></label>
+      <label class="full">TUJUAN<input id="f_purpose"></label>
+      <label>TARIKH JANGKA PULANG<input id="f_expected_return" type="date"></label>
+      <label>TARIKH PULANG SEBENAR<input id="f_actual_return" type="date"></label>
+      <label>KEADAAN (PINJAM)<input id="f_condition_out" value="Baik"></label>
+      <label>KEADAAN (PULANG)<input id="f_condition_in"></label>
+      <label>STATUS<select id="f_status"><option>Dipinjam</option><option>Dipulangkan</option><option>Lewat</option></select></label>
+      <label>SAKSI<input id="f_witness"></label>
+      <label>PENGESAH<input id="f_approver"></label>
+      <label class="full">CATATAN<textarea id="f_remarks"></textarea></label>
+    </div>
+    <datalist id="invList">{% for i in inventory %}<option value="{{ i.name }}">{% endfor %}</datalist>
+    <div class="sdg-actions">
+      <button type="button" class="btn" id="genBtn">Papar</button>
+      <button type="button" class="btn" id="saveBtn">Simpan</button>
+      <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+      <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+    </div>
+  </div>
+
+  <div class="sdg-doc" id="doc">
+    <div class="sdg-doc-head"><div class="sdg-doc-title">Pratonton</div></div>
+    <div class="sdg-prev" id="docBody"></div>
+  </div>
+
+  <div class="sdg-inv">
+    <h3 style="font-size:0.9rem;color:#c7d2fe">Inventori Perkakasan ICT</h3>
+    <table><tr><th>Nama</th><th>Kategori</th><th>No. Siri</th><th>Bil.</th><th>Keadaan</th></tr>
+      {% for i in inventory %}<tr><td>{{ i.name }}</td><td>{{ i.category }}</td><td>{{ i.serial_no }}</td><td>{{ i.quantity }}</td><td>{{ i.condition }}</td></tr>
+      {% else %}<tr><td colspan="5" style="text-align:center;color:var(--muted)">Inventori kosong (pentadbir boleh tambah).</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="sdg-hist" style="margin-top:22px">
+    <h3 style="font-size:0.9rem;color:#c7d2fe">Sejarah Pinjaman</h3>
+    <table><tr><th>Peminjam</th><th>Perkakasan</th><th>No. Siri</th><th>Tarikh</th><th>Status</th></tr>
+      {% for r in recent %}<tr><td>{{ r.teacher_name }}</td><td>{{ r.equipment_name }}</td><td>{{ r.serial_no }}</td><td>{{ r.borrow_date }}</td><td>{{ r.status }}</td></tr>
+      {% else %}<tr><td colspan="5" style="text-align:center;color:var(--muted)">Tiada rekod.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var data = null;
+  var KEYS = ['teacher_name','equipment_name','category','serial_no','quantity','borrow_date','borrow_time','purpose','expected_return','actual_return','condition_out','condition_in','status','witness','approver','remarks'];
+  function $(id){ return document.getElementById(id); }
+  function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
+  function collect(){ var o={}; KEYS.forEach(function(k){ o[k]=$('f_'+k).value.trim(); }); o.quantity = parseInt($('f_quantity').value)||1; return o; }
+  function fill(d){ data=d; KEYS.forEach(function(k){ if($('f_'+k)) $('f_'+k).value=d[k]===undefined?'':d[k]; }); $('formCard').style.display='block'; }
+  function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
+  $('autoBtn').onclick = function(){
+    var instr = $('instr').value.trim(); if(!instr){ toast('Tulis arahan dahulu', true); return; }
+    $('status').textContent='Memproses...';
+    post('/ict-loan/autofill', { instruction: instr }).then(function(res){ $('status').textContent=''; if(res.data) fill(res.data); })
+      .catch(function(){ $('status').textContent=''; toast('Ralat. Tiada API key? Isi manual.', true); });
+  };
+  $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
+  function renderPreview(){
+    data = collect();
+    var labels = {teacher_name:'NAMA PEMINJAM',equipment_name:'NAMA PERKAKASAN',category:'KATEGORI',serial_no:'NOMBOR SIRI',quantity:'KUANTITI',borrow_date:'TARIKH PINJAM',borrow_time:'MASA PINJAM',purpose:'TUJUAN',expected_return:'TARIKH JANGKA PULANG',actual_return:'TARIKH PULANG SEBENAR',condition_out:'KEADAAN (PINJAM)',condition_in:'KEADAAN (PULANG)',status:'STATUS',witness:'SAKSI',approver:'PENGESAH',remarks:'CATATAN'};
+    var h = '<h3>REKOD PINJAMAN PERKAKASAN ICT</h3><table>';
+    KEYS.forEach(function(k){ h += '<tr><td class="lbl">'+labels[k]+'</td><td>'+(data[k]===undefined?'—':String(data[k]).replace(/\n/g,'<br>')||'—')+'</td></tr>'; });
+    h += '</table><p style="margin-top:16px;font-size:0.8rem">Tandatangan Peminjam: ____________ &nbsp;&nbsp; Disahkan oleh: ____________</p>';
+    $('docBody').innerHTML = h; $('doc').classList.add('show');
+  }
+  function dl(fmt){
+    data = collect();
+    fetch('/ict-loan/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data, format: fmt }) })
+      .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+      .then(function(b){ var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Rekod_Pinjaman.'+(fmt==='pdf'?'pdf':'docx'); document.body.appendChild(a); a.click(); a.remove(); })
+      .catch(function(){ toast('Muat turun gagal', true); });
+  }
+  $('pdfBtn').onclick=function(){dl('pdf');}; $('docxBtn').onclick=function(){dl('docx');};
+  $('saveBtn').onclick=function(){ data = collect(); post('/ict-loan/save', { data: data }).then(function(res){ if(res.ok) toast('Disimpan'); }); };
+})();
+</script>
+{% endblock %}

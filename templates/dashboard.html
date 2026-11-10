@@ -74,6 +74,15 @@
   <a class="card" href="{{ url_for('minit.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-time"/></svg></span><span><strong>Minit Curai</strong><span>KPM-style meeting minutes.</span></span></a>
   <a class="card" href="{{ url_for('analytics.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-analytics"/></svg></span><span><strong>{{ t('nav_analytics', lang) }}</strong><span>Charts and reports.</span></span></a>
 </div>
+
+<h2>{{ t('school_documents', lang) }}</h2>
+<div class="cards">
+  <a class="card" href="{{ url_for('ict_booking.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plan"/></svg></span><span><strong>Rekod Penempahan Bilik ICT</strong><span>Book the ICT room with conflict detection.</span></span></a>
+  <a class="card" href="{{ url_for('koko.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-attend"/></svg></span><span><strong>Laporan Kokurikulum</strong><span>Illustrated co-curricular report with photos.</span></span></a>
+  <a class="card" href="{{ url_for('duty.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-staff"/></svg></span><span><strong>Laporan Harian Guru Bertugas</strong><span>Daily duty report from observations.</span></span></a>
+  <a class="card" href="{{ url_for('assembly.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span><strong>Laporan Perhimpunan</strong><span>School assembly report.</span></span></a>
+  <a class="card" href="{{ url_for('loan.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-analytics"/></svg></span><span><strong>Rekod Pinjaman Perkakasan ICT</strong><span>Equipment loan records with inventory.</span></span></a>
+</div>
 {% endblock %}
 
 {% block scripts %}

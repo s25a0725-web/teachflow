@@ -137,6 +137,7 @@ TRANSLATIONS = {
 
     # Dashboard
     "quick_actions": {"en": "Quick actions", "ms": "Tindakan pantas", "ta": "விரைவு செயல்கள்"},
+    "school_documents": {"en": "School Documents", "ms": "Dokumen Sekolah", "ta": "பள்ளி ஆவணங்கள்"},
     "stat_classes": {"en": "Classes", "ms": "Kelas", "ta": "வகுப்புகள்"},
     "stat_students": {"en": "Students", "ms": "Pelajar", "ta": "மாணவர்கள்"},
     "stat_assignments": {"en": "Assignments", "ms": "Tugasan", "ta": "பணிகள்"},

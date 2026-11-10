@@ -236,7 +236,7 @@ class NumberedCanvas(canvas.Canvas):
 
 
 def _esc(s):
-    return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def styles():

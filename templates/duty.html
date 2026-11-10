@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Laporan Harian Guru Bertugas · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.sdg-wrap { max-width: 960px; margin: 0 auto; }
+.sdg-card { padding: 1.4rem 1.5rem; }
+.sdg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sdg-grid .full { grid-column: 1 / -1; }
+.sdg-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
+.sdg-grid input, .sdg-grid textarea { padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit; }
+.sdg-grid input:focus, .sdg-grid textarea:focus { outline: none; border-color: var(--accent); }
+.sdg-grid textarea { resize: vertical; min-height: 54px; }
+.sdg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.sdg-hint { font-size: 0.8rem; color: var(--muted); }
+.sdg-doc { margin-top: 20px; display: none; }
+.sdg-doc.show { display: block; }
+.sdg-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sdg-doc-title { font-weight: 800; font-size: 1.1rem; color: #fff; }
+.sdg-doc-tools { display: flex; gap: 8px; }
+.sdg-prev { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(255,255,255,0.02); }
+.sdg-prev h3 { margin: 0 0 10px; font-size: 1rem; color: #c7d2fe; text-align: center; }
+.sdg-prev table { width: 100%; border-collapse: collapse; }
+.sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
+.sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 36%; }
+.sdg-hist { margin-top: 22px; }
+.sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-hist th { color: var(--muted); background: rgba(255,255,255,0.03); }
+@media print { .sdg-wrap form, .sdg-doc-head, .sdg-doc-tools, .sdg-hist { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="sdg-wrap">
+  <h2>Laporan Harian Guru Bertugas</h2>
+  <p class="sdg-hint">Contoh: "Hari ini Isnin. Kawasan sekolah bersih. Kantin beroperasi normal. Dua orang guru tidak hadir. Perhimpunan berjalan lancar."</p>
+
+  <div class="card sdg-card">
+    <label class="sdg-grid"><span class="full">Catatan Harian<textarea id="instr"></textarea></span></label>
+    <div class="sdg-actions"><button type="button" class="btn" id="autoBtn">✨ Jana Laporan</button><span class="sdg-hint" id="status"></span></div>
+  </div>
+
+  <div class="card sdg-card" id="formCard" style="display:none">
+    <div class="sdg-grid">
+      <label>MINGGU<input id="f_week"></label>
+      <label>TARIKH<input id="f_date" type="date"></label>
+      <label>HARI<input id="f_day"></label>
+      <label>GURU BERTUGAS<input id="f_teacher_duty"></label>
+      <label class="full">GURU TIDAK HADIR<input id="f_teachers_absent"></label>
+      <label class="full">SEBAB TIDAK HADIR<input id="f_absence_reason"></label>
+      <label class="full">MURID TIDAK HADIR<input id="f_students_absent"></label>
+      <label class="full">MAKLUMAT KEHADIRAN<textarea id="f_attendance"></textarea></label>
+      <label>CUACA<input id="f_weather"></label>
+      <label>KEBERSIHAN SEKOLAH<textarea id="f_cleanliness"></textarea></label>
+      <label class="full">KEADAAN KEMUDAHAN<textarea id="f_facilities"></textarea></label>
+      <label class="full">KEADAAN KANTIN<textarea id="f_canteen"></textarea></label>
+      <label class="full">PEMERHATIAN DISIPLIN<textarea id="f_discipline"></textarea></label>
+      <label class="full">AKTIVITI KHAS<textarea id="f_special_activities"></textarea></label>
+      <label class="full">PELAWAT<input id="f_visitors"></label>
+      <label class="full">INSIDEN PENTING<textarea id="f_incidents"></textarea></label>
+      <label class="full">CATATAN KESELURUHAN<textarea id="f_remarks"></textarea></label>
+      <label class="full">CADANGAN<textarea id="f_recommendations"></textarea></label>
+    </div>
+    <div class="sdg-actions">
+      <button type="button" class="btn" id="genBtn">Papar</button>
+      <button type="button" class="btn" id="saveBtn">Simpan</button>
+      <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+      <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+    </div>
+  </div>
+
+  <div class="sdg-doc" id="doc">
+    <div class="sdg-doc-head"><div class="sdg-doc-title">Pratonton</div></div>
+    <div class="sdg-prev" id="docBody"></div>
+  </div>
+
+  <div class="sdg-hist">
+    <h3 style="font-size:0.9rem;color:#c7d2fe">Sejarah</h3>
+    <table><tr><th>Tarikh</th><th>Dicipta</th></tr>
+      {% for r in recent %}<tr><td>{{ r.duty_date }}</td><td>{{ r.created_at }}</td></tr>
+      {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted)">Tiada rekod.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var data = null;
+  var KEYS = ['week','date','day','teacher_duty','teachers_absent','absence_reason','students_absent','attendance','weather','cleanliness','facilities','canteen','discipline','special_activities','visitors','incidents','remarks','recommendations'];
+  function $(id){ return document.getElementById(id); }
+  function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
+  function collect(){
+    var o = {};
+    KEYS.forEach(function(k){ o[k] = $('f_'+k).value.trim(); });
+    return o;
+  }
+  function fill(d){
+    data = d;
+    KEYS.forEach(function(k){ if($('f_'+k)) $('f_'+k).value = d[k] || ''; });
+    $('formCard').style.display='block';
+  }
+  function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
+  $('autoBtn').onclick = function(){
+    var instr = $('instr').value.trim(); if(!instr){ toast('Tulis catatan dahulu', true); return; }
+    $('status').textContent='Menjana...';
+    post('/duty-report/autofill', { instruction: instr }).then(function(res){ $('status').textContent=''; if(res.data) fill(res.data); })
+      .catch(function(){ $('status').textContent=''; toast('Ralat. Tiada API key? Isi manual.', true); });
+  };
+  $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
+  function renderPreview(){
+    data = collect();
+    var labels = {week:'MINGGU',date:'TARIKH',day:'HARI',teacher_duty:'GURU BERTUGAS',teachers_absent:'GURU TIDAK HADIR',absence_reason:'SEBAB TIDAK HADIR',students_absent:'MURID TIDAK HADIR',attendance:'MAKLUMAT KEHADIRAN',weather:'CUACA',cleanliness:'KEBERSIHAN SEKOLAH',facilities:'KEADAAN KEMUDAHAN',canteen:'KEADAAN KANTIN',discipline:'PEMERHATIAN DISIPLIN',special_activities:'AKTIVITI KHAS',visitors:'PELAWAT',incidents:'INSIDEN PENTING',remarks:'CATATAN KESELURUHAN',recommendations:'CADANGAN'};
+    var h = '<h3>LAPORAN HARIAN GURU BERTUGAS</h3><table>';
+    KEYS.forEach(function(k){ h += '<tr><td class="lbl">'+labels[k]+'</td><td>'+((data[k]||'').replace(/\n/g,'<br>')||'—')+'</td></tr>'; });
+    h += '</table><p style="margin-top:16px;font-size:0.8rem">Guru Bertugas: ____________</p>';
+    $('docBody').innerHTML = h; $('doc').classList.add('show');
+  }
+  function dl(fmt){
+    data = collect();
+    fetch('/duty-report/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data, format: fmt }) })
+      .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+      .then(function(b){ var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Laporan_Harian.'+(fmt==='pdf'?'pdf':'docx'); document.body.appendChild(a); a.click(); a.remove(); })
+      .catch(function(){ toast('Muat turun gagal', true); });
+  }
+  $('pdfBtn').onclick=function(){dl('pdf');}; $('docxBtn').onclick=function(){dl('docx');};
+  $('saveBtn').onclick=function(){ data = collect(); post('/duty-report/save', { data: data }).then(function(res){ if(res.ok) toast('Disimpan'); }); };
+})();
+</script>
+{% endblock %}

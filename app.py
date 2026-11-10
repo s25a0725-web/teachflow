@@ -70,6 +70,9 @@ def create_app():
     from workflow import bp as workflow_bp
     from ict_booking import bp as ict_booking_bp
     from koko import bp as koko_bp
+    from duty import bp as duty_bp
+    from assembly import bp as assembly_bp
+    from loan import bp as loan_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
@@ -83,6 +86,9 @@ def create_app():
     app.register_blueprint(workflow_bp)
     app.register_blueprint(ict_booking_bp)
     app.register_blueprint(koko_bp)
+    app.register_blueprint(duty_bp)
+    app.register_blueprint(assembly_bp)
+    app.register_blueprint(loan_bp)
 
     @app.context_processor
     def inject_globals():
