@@ -66,6 +66,8 @@
       <label class="full">KELAS / KUMPULAN<input id="f_class" placeholder="Tahun 5"></label>
       <label class="full">CATATAN<textarea id="f_remarks" placeholder="Catatan (boleh kosong)"></textarea></label>
     </div>
+    {% set sign_roles = [('pemohon','Tandatangan Guru Pemohon'), ('disahkan','Disahkan oleh')] %}
+    {% include "_esig.html" %}
     <div class="sdg-actions">
       <button type="button" class="btn" id="genBtn">Papar Borang</button>
       <button type="button" class="btn" id="saveBtn">Simpan</button>
@@ -107,7 +109,8 @@
       booking_date: $('f_date').value, day: $('f_day').value.trim(),
       start_time: $('f_start').value, end_time: $('f_end').value,
       purpose: $('f_purpose').value, duration: $('f_duration').value.trim(),
-      class_info: $('f_class').value.trim(), remarks: $('f_remarks').value.trim() };
+      class_info: $('f_class').value.trim(), remarks: $('f_remarks').value.trim(),
+      signatures: (window.esigCollect && window.esigCollect()) || {} };
   }
   function fill(d){
     data = d;

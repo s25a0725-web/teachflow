@@ -14,6 +14,7 @@ from i18n import t
 import userstore
 from docgen import ai_autofill, parse_date_day, school_profile
 from assembly_doc import build_assembly_pdf, build_assembly_docx, FIELDS
+from esig import resolve_signatures
 
 bp = Blueprint("assembly", __name__, url_prefix="/assembly-report")
 
@@ -44,10 +45,10 @@ _SYSTEM = (
     "You are a Malaysian school teacher writing a LAPORAN PERHIMPUNAN (assembly report) "
     "in formal Bahasa Melayu. Convert the teacher's notes into the correct sections. "
     "Output ONLY valid JSON (no markdown) with exactly these keys: "
-    '{"week":"","date":"YYYY-MM-DD","day":"HARI","venue":"","teacher_duty":"","agenda":"",'
-    '"negaraku":"","state_anthem":"","rukun_negara":"","headteacher_speech":"",'
-    '"teacher_announcements":"","student_announcements":"","performances":"",'
-    '"special_activities":"","messages":"","remarks":"","conclusion":""}. '
+    '{"week":"","date":"YYYY-MM-DD","day":"HARI","teacher_speech":"","teacher_duty_1":"","teacher_duty_2":"",'
+    '"topic":"","agenda":["item",...],"headteacher_speech":"","admin_notices":"","performances":"",'
+    '"notes":"","disediakan_nama":"","disemak_nama":""}. '
+    "agenda is an array of 3-8 ordered items (anthems, Rukun Negara, speeches, checks). "
     "Use accurate terminology. Write empty string for missing info. "
     "Never invent a speech, announcement, performance or message not implied by the input. "
     "Fix grammar and spelling. Today is %s."
@@ -57,11 +58,11 @@ _SYSTEM = (
 def _fallback(text):
     iso, day = parse_date_day(text)
     return {
-        "week": "", "date": iso or "", "day": day, "venue": "", "teacher_duty": "",
-        "agenda": "", "negaraku": "", "state_anthem": "", "rukun_negara": "",
-        "headteacher_speech": "", "teacher_announcements": "", "student_announcements": "",
-        "performances": "", "special_activities": "", "messages": "",
-        "remarks": (text or "").strip(), "conclusion": "",
+        "week": "", "date": iso or "", "day": day, "teacher_speech": "",
+        "teacher_duty_1": "", "teacher_duty_2": "", "topic": "",
+        "agenda": [], "headteacher_speech": "", "admin_notices": "",
+        "performances": "", "notes": (text or "").strip(),
+        "disediakan_nama": "", "disemak_nama": "",
     }
 
 
@@ -69,6 +70,9 @@ def _normalise(data, fields):
     out = {k: "" for k in fields}
     for k in fields:
         out[k] = data.get(k) or ""
+    v = data.get("agenda")
+    out["agenda"] = v if isinstance(v, list) else ([x.strip() for x in str(v or "").split("\n") if x.strip()])
+    out["signatures"] = data.get("signatures") or {}
     return out
 
 
@@ -93,7 +97,7 @@ def autofill():
     fields = [k for k, _ in FIELDS]
     sys_prompt = _SYSTEM % datetime.now().strftime("%Y-%m-%d (%A)")
     data = ai_autofill(sys_prompt, text, fields, _fallback)
-    data["teacher_duty"] = data.get("teacher_duty") or _teacher_name()
+    data["teacher_duty_1"] = data.get("teacher_duty_1") or _teacher_name()
     return jsonify({"data": data})
 
 
@@ -119,7 +123,8 @@ def save():
 def export():
     payload = _json_body()
     d = _normalise(payload.get("data") or {}, [k for k, _ in FIELDS])
-    d.setdefault("teacher_duty", _teacher_name())
+    d.setdefault("teacher_duty_1", _teacher_name())
+    resolve_signatures(d)
     fmt = payload.get("format") or "pdf"
     stem = "Laporan_Perhimpunan_%s" % datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "pdf":

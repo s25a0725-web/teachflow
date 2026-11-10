@@ -44,21 +44,18 @@
       <label>MINGGU<input id="f_week"></label>
       <label>TARIKH<input id="f_date" type="date"></label>
       <label>HARI<input id="f_day"></label>
-      <label>TEMPAT PERHIMPUNAN<input id="f_venue"></label>
-      <label>GURU BERTUGAS<input id="f_teacher_duty"></label>
-      <label class="full">AGENDA<textarea id="f_agenda"></textarea></label>
-      <label class="full">LAGU NEGARAKU<input id="f_negaraku"></label>
-      <label class="full">LAGU NEGERI<input id="f_state_anthem"></label>
-      <label class="full">IKRAR RUKUN NEGARA<input id="f_rukun_negara"></label>
+      <label>GURU BERUCAP<input id="f_teacher_speech"></label>
+      <label>GURU BERTUGAS 1<input id="f_teacher_duty_1"></label>
+      <label>GURU BERTUGAS 2<input id="f_teacher_duty_2"></label>
+      <label class="full">TAJUK PERHIMPUNAN<input id="f_topic"></label>
+      <label class="full">AGENDA (satu per baris)<textarea id="f_agenda"></textarea></label>
       <label class="full">UCAPAN GURU BESAR<textarea id="f_headteacher_speech"></textarea></label>
-      <label class="full">PENGUMUMAN GURU<textarea id="f_teacher_announcements"></textarea></label>
-      <label class="full">PENGUMUMAN MURID<textarea id="f_student_announcements"></textarea></label>
+      <label class="full">PESANAN BARISAN PENTADBIR<textarea id="f_admin_notices"></textarea></label>
       <label class="full">PERSEMBAHAN MURID<textarea id="f_performances"></textarea></label>
-      <label class="full">AKTIVITI KHAS<textarea id="f_special_activities"></textarea></label>
-      <label class="full">MESEJ PENTING<textarea id="f_messages"></textarea></label>
-      <label class="full">CATATAN KESELURUHAN<textarea id="f_remarks"></textarea></label>
-      <label class="full">KESIMPULAN<textarea id="f_conclusion"></textarea></label>
+      <label class="full">CATATAN<textarea id="f_notes"></textarea></label>
     </div>
+    {% set sign_roles = [('penyedia','Disediakan oleh'), ('disemak','Disemak oleh')] %}
+    {% include "_esig.html" %}
     <div class="sdg-actions">
       <button type="button" class="btn" id="genBtn">Papar</button>
       <button type="button" class="btn" id="saveBtn">Simpan</button>
@@ -86,11 +83,27 @@
 <script>
 (function () {
   var data = null;
-  var KEYS = ['week','date','day','venue','teacher_duty','agenda','negaraku','state_anthem','rukun_negara','headteacher_speech','teacher_announcements','student_announcements','performances','special_activities','messages','remarks','conclusion'];
   function $(id){ return document.getElementById(id); }
   function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
-  function collect(){ var o={}; KEYS.forEach(function(k){ o[k]=$('f_'+k).value.trim(); }); return o; }
-  function fill(d){ data=d; KEYS.forEach(function(k){ if($('f_'+k)) $('f_'+k).value=d[k]||''; }); $('formCard').style.display='block'; }
+  function lines(id){ return $(id).value.split('\n').map(function(x){return x.trim();}).filter(Boolean); }
+  function collect(){
+    return { week: $('f_week').value.trim(), date: $('f_date').value, day: $('f_day').value.trim(),
+      teacher_speech: $('f_teacher_speech').value.trim(), teacher_duty_1: $('f_teacher_duty_1').value.trim(),
+      teacher_duty_2: $('f_teacher_duty_2').value.trim(), topic: $('f_topic').value.trim(),
+      agenda: lines('f_agenda'), headteacher_speech: $('f_headteacher_speech').value.trim(),
+      admin_notices: $('f_admin_notices').value.trim(), performances: $('f_performances').value.trim(),
+      notes: $('f_notes').value.trim(), signatures: (window.esigCollect && window.esigCollect()) || {} };
+  }
+  function fill(d){
+    data = d;
+    $('f_week').value=d.week||''; $('f_date').value=d.date||''; $('f_day').value=d.day||'';
+    $('f_teacher_speech').value=d.teacher_speech||''; $('f_teacher_duty_1').value=d.teacher_duty_1||'';
+    $('f_teacher_duty_2').value=d.teacher_duty_2||''; $('f_topic').value=d.topic||'';
+    $('f_agenda').value=(d.agenda||[]).join('\n'); $('f_headteacher_speech').value=d.headteacher_speech||'';
+    $('f_admin_notices').value=d.admin_notices||''; $('f_performances').value=d.performances||'';
+    $('f_notes').value=d.notes||'';
+    $('formCard').style.display='block';
+  }
   function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
   $('autoBtn').onclick = function(){
     var instr = $('instr').value.trim(); if(!instr){ toast('Tulis catatan dahulu', true); return; }
@@ -101,10 +114,10 @@
   $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
   function renderPreview(){
     data = collect();
-    var labels = {week:'MINGGU',date:'TARIKH',day:'HARI',venue:'TEMPAT PERHIMPUNAN',teacher_duty:'GURU BERTUGAS',agenda:'AGENDA',negaraku:'LAGU NEGARAKU',state_anthem:'LAGU NEGERI',rukun_negara:'IKRAR RUKUN NEGARA',headteacher_speech:'UCAPAN GURU BESAR',teacher_announcements:'PENGUMUMAN GURU',student_announcements:'PENGUMUMAN MURID',performances:'PERSEMBAHAN MURID',special_activities:'AKTIVITI KHAS',messages:'MESEJ PENTING',remarks:'CATATAN KESELURUHAN',conclusion:'KESIMPULAN'};
     var h = '<h3>LAPORAN PERHIMPUNAN</h3><table>';
-    KEYS.forEach(function(k){ h += '<tr><td class="lbl">'+labels[k]+'</td><td>'+((data[k]||'').replace(/\n/g,'<br>')||'—')+'</td></tr>'; });
-    h += '</table><p style="margin-top:16px;font-size:0.8rem">Guru Bertugas: ____________</p>';
+    var rows = [['MINGGU',data.week],['TARIKH',data.date],['HARI',data.day],['GURU BERUCAP',data.teacher_speech],['GURU BERTUGAS MINGGU INI',(data.teacher_duty_1||'')+' / '+(data.teacher_duty_2||'')],['TAJUK PERHIMPUNAN',data.topic],['AGENDA',(data.agenda||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],['UCAPAN GURU BESAR',data.headteacher_speech||'TIADA'],['PESANAN BARISAN PENTADBIR',data.admin_notices||'TIADA'],['PERSEMBAHAN MURID',data.performances||'TIADA'],['CATATAN',data.notes]];
+    rows.forEach(function(r){ h += '<tr><td class="lbl">'+r[0]+'</td><td>'+(r[1]||'—')+'</td></tr>'; });
+    h += '</table>';
     $('docBody').innerHTML = h; $('doc').classList.add('show');
   }
   function dl(fmt){

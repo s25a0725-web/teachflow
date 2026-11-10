@@ -14,6 +14,7 @@ from i18n import t
 import userstore
 from docgen import ai_autofill, parse_date_day, school_profile
 from loan_doc import build_loan_pdf, build_loan_docx, FIELDS
+from esig import resolve_signatures
 
 bp = Blueprint("loan", __name__, url_prefix="/ict-loan")
 
@@ -56,9 +57,9 @@ _SYSTEM = (
     "request into a structured loan record. Output ONLY valid JSON (no markdown) "
     "with exactly these keys: "
     '{"teacher_name":"","equipment_name":"","category":"","serial_no":"","quantity":1,'
-    '"borrow_date":"YYYY-MM-DD","borrow_time":"HH:MM","purpose":"","expected_return":"YYYY-MM-DD",'
-    '"actual_return":"","condition_out":"","condition_in":"","status":"Dipinjam",'
-    '"witness":"","approver":"","remarks":""}. '
+    '"borrow_date":"YYYY-MM-DD","borrow_time":"HH:MM","purpose":"","witness":"",'
+    '"return_date":"","status":"Dipinjam","complaint":"","return_witness":"",'
+    '"approver":"","remarks":""}. '
     "Retrieve equipment name/category from the provided inventory list if a match exists. "
     "Never invent a serial number or return status. Today is %s."
 )
@@ -71,9 +72,8 @@ def _fallback(text):
     return {
         "teacher_name": "", "equipment_name": "", "category": "", "serial_no": "",
         "quantity": 1, "borrow_date": iso or "", "borrow_time": s, "purpose": "",
-        "expected_return": "", "actual_return": "", "condition_out": "Baik",
-        "condition_in": "", "status": "Dipinjam", "witness": "", "approver": "",
-        "remarks": (text or "").strip(),
+        "witness": "", "return_date": "", "status": "Dipinjam", "complaint": "",
+        "return_witness": "", "approver": "", "remarks": (text or "").strip(),
     }
 
 
@@ -89,6 +89,7 @@ def _normalise(data, fields):
     for k in fields:
         out[k] = data.get(k) if data.get(k) is not None else ""
     out["quantity"] = data.get("quantity") or 1
+    out["signatures"] = data.get("signatures") or {}
     return out
 
 
@@ -178,9 +179,8 @@ def autofill():
 def save():
     payload = _json_body()
     d = _normalise(payload.get("data") or {}, ["teacher_name", "equipment_name", "category", "serial_no",
-                    "quantity", "borrow_date", "borrow_time", "purpose", "expected_return",
-                    "actual_return", "condition_out", "condition_in", "status", "witness",
-                    "approver", "remarks"])
+                    "quantity", "borrow_date", "borrow_time", "purpose", "witness",
+                    "return_date", "status", "complaint", "return_witness", "approver", "remarks"])
     db = get_db()
     cur = db.execute(
         "INSERT INTO ict_loans (teacher_id, teacher_name, equipment_name, category, serial_no, "
@@ -189,8 +189,8 @@ def save():
         (session["user_id"], d.get("teacher_name") or _teacher_name(), d.get("equipment_name") or "",
          d.get("category") or "", d.get("serial_no") or "", d.get("quantity") or 1,
          d.get("borrow_date") or "", d.get("borrow_time") or "", d.get("purpose") or "",
-         d.get("expected_return") or "", d.get("actual_return") or "", d.get("condition_out") or "",
-         d.get("condition_in") or "", d.get("status") or "Dipinjam", d.get("witness") or "",
+         d.get("return_date") or "", d.get("return_date") or "", "Baik",
+         d.get("complaint") or "", d.get("status") or "Dipinjam", d.get("witness") or "",
          d.get("approver") or "", d.get("remarks") or "", json.dumps(d, ensure_ascii=False)),
     )
     db.commit()
@@ -204,10 +204,10 @@ def save():
 def export():
     payload = _json_body()
     d = _normalise(payload.get("data") or {}, ["teacher_name", "equipment_name", "category", "serial_no",
-                    "quantity", "borrow_date", "borrow_time", "purpose", "expected_return",
-                    "actual_return", "condition_out", "condition_in", "status", "witness",
-                    "approver", "remarks"])
+                    "quantity", "borrow_date", "borrow_time", "purpose", "witness",
+                    "return_date", "status", "complaint", "return_witness", "approver", "remarks"])
     d.setdefault("teacher_name", _teacher_name())
+    resolve_signatures(d)
     fmt = payload.get("format") or "pdf"
     stem = "Rekod_Pinjaman_Perkakasan_ICT_%s" % datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "pdf":

@@ -22,6 +22,9 @@
 .sdg-prev table { width: 100%; border-collapse: collapse; }
 .sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
 .sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 36%; }
+.fac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fac-grid label { flex-direction: row; align-items: center; gap: 8px; }
+.fac-grid input { flex: 1; }
 .sdg-hist { margin-top: 22px; }
 .sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
@@ -44,22 +47,17 @@
       <label>MINGGU<input id="f_week"></label>
       <label>TARIKH<input id="f_date" type="date"></label>
       <label>HARI<input id="f_day"></label>
-      <label>GURU BERTUGAS<input id="f_teacher_duty"></label>
-      <label class="full">GURU TIDAK HADIR<input id="f_teachers_absent"></label>
-      <label class="full">SEBAB TIDAK HADIR<input id="f_absence_reason"></label>
-      <label class="full">MURID TIDAK HADIR<input id="f_students_absent"></label>
-      <label class="full">MAKLUMAT KEHADIRAN<textarea id="f_attendance"></textarea></label>
-      <label>CUACA<input id="f_weather"></label>
-      <label>KEBERSIHAN SEKOLAH<textarea id="f_cleanliness"></textarea></label>
-      <label class="full">KEADAAN KEMUDAHAN<textarea id="f_facilities"></textarea></label>
-      <label class="full">KEADAAN KANTIN<textarea id="f_canteen"></textarea></label>
-      <label class="full">PEMERHATIAN DISIPLIN<textarea id="f_discipline"></textarea></label>
+      <label>NAMA GURU BERTUGAS 1<input id="f_teacher_duty_1"></label>
+      <label>NAMA GURU BERTUGAS 2<input id="f_teacher_duty_2"></label>
+      <label class="full">NAMA GURU TIDAK HADIR<input id="f_teachers_absent"></label>
       <label class="full">AKTIVITI KHAS<textarea id="f_special_activities"></textarea></label>
-      <label class="full">PELAWAT<input id="f_visitors"></label>
-      <label class="full">INSIDEN PENTING<textarea id="f_incidents"></textarea></label>
-      <label class="full">CATATAN KESELURUHAN<textarea id="f_remarks"></textarea></label>
-      <label class="full">CADANGAN<textarea id="f_recommendations"></textarea></label>
+      <label class="full">LAWATAN TETAMU<input id="f_visitors"></label>
     </div>
+    <h4 style="margin:14px 0 6px;font-size:0.85rem;color:#c7d2fe">KEADAAN KEMUDAHAN SEKOLAH</h4>
+    <div class="fac-grid" id="facGrid"></div>
+    <label class="sdg-grid" style="margin-top:12px"><span class="full">ULASAN KESELURUHAN<textarea id="f_remarks" placeholder="Baik"></textarea></span></label>
+    {% set sign_roles = [('disemak','Disemak oleh'), ('disahkan','Disahkan oleh')] %}
+    {% include "_esig.html" %}
     <div class="sdg-actions">
       <button type="button" class="btn" id="genBtn">Papar</button>
       <button type="button" class="btn" id="saveBtn">Simpan</button>
@@ -86,21 +84,40 @@
 {% block scripts %}
 <script>
 (function () {
+  var FACILITIES = ['Bilik-bilik Khas','Makmal','Bengkel','Padang','Tandas Guru','Tandas Murid','Kantin','Pra Sekolah','Pejabat','Bilik ICT'];
   var data = null;
-  var KEYS = ['week','date','day','teacher_duty','teachers_absent','absence_reason','students_absent','attendance','weather','cleanliness','facilities','canteen','discipline','special_activities','visitors','incidents','remarks','recommendations'];
   function $(id){ return document.getElementById(id); }
   function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
   function collect(){
-    var o = {};
-    KEYS.forEach(function(k){ o[k] = $('f_'+k).value.trim(); });
+    var fac = {};
+    document.querySelectorAll('#facGrid input').forEach(function(inp){ fac[inp.getAttribute('data-name')] = inp.value.trim() || 'Baik'; });
+    var o = {
+      week: $('f_week').value.trim(), date: $('f_date').value, day: $('f_day').value.trim(),
+      teacher_duty_1: $('f_teacher_duty_1').value.trim(), teacher_duty_2: $('f_teacher_duty_2').value.trim(),
+      teachers_absent: $('f_teachers_absent').value.trim(), special_activities: $('f_special_activities').value.trim(),
+      visitors: $('f_visitors').value.trim(), facilities: fac, remarks: $('f_remarks').value.trim(),
+      signatures: (window.esigCollect && window.esigCollect()) || {}
+    };
     return o;
   }
   function fill(d){
     data = d;
-    KEYS.forEach(function(k){ if($('f_'+k)) $('f_'+k).value = d[k] || ''; });
+    $('f_week').value=d.week||''; $('f_date').value=d.date||''; $('f_day').value=d.day||'';
+    $('f_teacher_duty_1').value=d.teacher_duty_1||''; $('f_teacher_duty_2').value=d.teacher_duty_2||'';
+    $('f_teachers_absent').value=d.teachers_absent||''; $('f_special_activities').value=d.special_activities||'';
+    $('f_visitors').value=d.visitors||''; $('f_remarks').value=d.remarks||'';
+    document.querySelectorAll('#facGrid input').forEach(function(inp){ inp.value = (d.facilities||{})[inp.getAttribute('data-name')] || 'Baik'; });
     $('formCard').style.display='block';
   }
   function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
+  // build facility grid
+  var grid = $('facGrid');
+  FACILITIES.forEach(function(f){
+    var lbl = document.createElement('label');
+    lbl.innerHTML = '<span style="min-width:110px">'+f+'</span><input data-name="'+f+'" value="Baik">';
+    grid.appendChild(lbl);
+  });
+
   $('autoBtn').onclick = function(){
     var instr = $('instr').value.trim(); if(!instr){ toast('Tulis catatan dahulu', true); return; }
     $('status').textContent='Menjana...';
@@ -110,10 +127,10 @@
   $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
   function renderPreview(){
     data = collect();
-    var labels = {week:'MINGGU',date:'TARIKH',day:'HARI',teacher_duty:'GURU BERTUGAS',teachers_absent:'GURU TIDAK HADIR',absence_reason:'SEBAB TIDAK HADIR',students_absent:'MURID TIDAK HADIR',attendance:'MAKLUMAT KEHADIRAN',weather:'CUACA',cleanliness:'KEBERSIHAN SEKOLAH',facilities:'KEADAAN KEMUDAHAN',canteen:'KEADAAN KANTIN',discipline:'PEMERHATIAN DISIPLIN',special_activities:'AKTIVITI KHAS',visitors:'PELAWAT',incidents:'INSIDEN PENTING',remarks:'CATATAN KESELURUHAN',recommendations:'CADANGAN'};
     var h = '<h3>LAPORAN HARIAN GURU BERTUGAS</h3><table>';
-    KEYS.forEach(function(k){ h += '<tr><td class="lbl">'+labels[k]+'</td><td>'+((data[k]||'').replace(/\n/g,'<br>')||'—')+'</td></tr>'; });
-    h += '</table><p style="margin-top:16px;font-size:0.8rem">Guru Bertugas: ____________</p>';
+    var rows = [['MINGGU',data.week],['TARIKH',data.date],['HARI',data.day],['NAMA GURU BERTUGAS 1',data.teacher_duty_1],['NAMA GURU BERTUGAS 2',data.teacher_duty_2],['NAMA GURU TIDAK HADIR',data.teachers_absent],['AKTIVITI KHAS',data.special_activities],['LAWATAN TETAMU',data.visitors],['ULASAN KESELURUHAN',data.remarks||'Baik']];
+    rows.forEach(function(r){ h += '<tr><td class="lbl">'+r[0]+'</td><td>'+(r[1]||'—')+'</td></tr>'; });
+    h += '</table>';
     $('docBody').innerHTML = h; $('doc').classList.add('show');
   }
   function dl(fmt){

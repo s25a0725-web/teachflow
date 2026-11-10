@@ -15,6 +15,7 @@ from i18n import t
 import userstore
 from docgen import ai_autofill, parse_date_day, school_profile
 from koko_doc import build_koko_pdf, build_koko_docx, FIELDS
+from esig import resolve_signatures
 
 bp = Blueprint("koko", __name__, url_prefix="/kokurikulum")
 
@@ -78,6 +79,7 @@ def _normalise(data, fields):
         v = data.get(k)
         out[k] = v if isinstance(v, list) else ([x.strip() for x in str(v or "").split("\n") if x.strip()])
     out["photos"] = data.get("photos") or []
+    out["signatures"] = data.get("signatures") or {}
     return out
 
 
@@ -150,6 +152,7 @@ def export():
     payload = _json_body()
     d = _normalise(payload.get("data") or {}, {})
     d.setdefault("disediakan_nama", _teacher_name())
+    resolve_signatures(d)
     fmt = payload.get("format") or "pdf"
     stem = "Laporan_Kokurikulum_%s" % datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "pdf":

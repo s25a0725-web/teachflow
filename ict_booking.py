@@ -19,6 +19,7 @@ from i18n import t
 import userstore
 from docgen import ai_autofill, parse_date_day, parse_time, school_profile
 from ict_booking_doc import build_ict_pdf, build_ict_docx, FIELDS
+from esig import resolve_signatures
 
 bp = Blueprint("ict_booking", __name__, url_prefix="/ict-booking")
 
@@ -195,6 +196,7 @@ def export():
     d = payload.get("data") or {}
     d.setdefault("teacher_name", _teacher_name())
     d.setdefault("school_name", school_profile()["school_name"])
+    resolve_signatures(d)
     fmt = payload.get("format") or "pdf"
     stem = "Rekod_Penempahan_Bilik_ICT_%s" % datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "pdf":

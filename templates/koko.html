@@ -66,6 +66,8 @@
       <label>Disahkan oleh (nama)<input id="f_disahkan_nama"></label>
       <label>Jawatan<input id="f_disahkan_jawatan"></label>
     </div>
+    {% set sign_roles = [('disediakan','Disediakan oleh'), ('disahkan','Disahkan oleh')] %}
+    {% include "_esig.html" %}
     <div class="sdg-actions">
       <button type="button" class="btn" id="genBtn">Papar</button>
       <button type="button" class="btn" id="saveBtn">Simpan</button>
@@ -102,7 +104,8 @@
       penilaian: lines('f_penilaian'), analisis: lines('f_analisis'), keberhasilan: lines('f_keberhasilan'),
       cadangan: lines('f_cadangan'), photos: data.photos,
       disediakan_nama: $('f_disediakan_nama').value.trim(), disediakan_jawatan: $('f_disediakan_jawatan').value.trim(),
-      disahkan_nama: $('f_disahkan_nama').value.trim(), disahkan_jawatan: $('f_disahkan_jawatan').value.trim() };
+      disahkan_nama: $('f_disahkan_nama').value.trim(), disahkan_jawatan: $('f_disahkan_jawatan').value.trim(),
+      signatures: (window.esigCollect && window.esigCollect()) || {} };
   }
   function fill(d){
     data = d; data.photos = d.photos || [];

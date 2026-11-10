@@ -23,19 +23,16 @@
 .sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
 .sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 38%; }
 .sdg-inv { margin-top: 22px; }
-.sdg-inv table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.sdg-inv th, .sdg-inv td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
-.sdg-inv th { color: var(--muted); background: rgba(255,255,255,0.03); }
-.sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
-.sdg-hist th { color: var(--muted); background: rgba(255,255,255,0.03); }
+.sdg-inv table, .sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-inv th, .sdg-inv td, .sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-inv th, .sdg-hist th { color: var(--muted); background: rgba(255,255,255,0.03); }
 @media print { .sdg-wrap form, .sdg-doc-head, .sdg-doc-tools, .sdg-inv, .sdg-hist { display: none !important; } }
 </style>
 {% endblock %}
 {% block content %}
 <div class="sdg-wrap">
   <h2>Rekod Pinjaman Perkakasan ICT</h2>
-  <p class="sdg-hint">Contoh: "Pinjam laptop HP untuk kelas Tahun 5 pada Isnin, pulang Jumaat." AI akan mengambil butiran peralatan daripada inventori.</p>
+  <p class="sdg-hint">Contoh: "Pinjam laptop HP untuk kelas Tahun 5 pada Isnin, pulang Jumaat." AI mengambil butiran daripada inventori.</p>
 
   <div class="card sdg-card">
     <label class="sdg-grid"><span class="full">Arahan<textarea id="instr"></textarea></span></label>
@@ -43,25 +40,26 @@
   </div>
 
   <div class="card sdg-card" id="formCard" style="display:none">
+    <h4 style="margin:0 0 8px;font-size:0.85rem;color:#c7d2fe">BAHAGIAN A — MAKLUMAT PINJAMAN</h4>
     <div class="sdg-grid">
-      <label>NAMA PEMINJAM<input id="f_teacher_name"></label>
-      <label>NAMA PERKAKASAN<input id="f_equipment_name" list="invList"></label>
-      <label>KATEGORI<select id="f_category">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></label>
-      <label>NOMBOR SIRI<input id="f_serial_no"></label>
-      <label>KUANTITI<input id="f_quantity" type="number" value="1"></label>
-      <label>TARIKH PINJAM<input id="f_borrow_date" type="date"></label>
-      <label>MASA PINJAM<input id="f_borrow_time" type="time"></label>
-      <label class="full">TUJUAN<input id="f_purpose"></label>
-      <label>TARIKH JANGKA PULANG<input id="f_expected_return" type="date"></label>
-      <label>TARIKH PULANG SEBENAR<input id="f_actual_return" type="date"></label>
-      <label>KEADAAN (PINJAM)<input id="f_condition_out" value="Baik"></label>
-      <label>KEADAAN (PULANG)<input id="f_condition_in"></label>
-      <label>STATUS<select id="f_status"><option>Dipinjam</option><option>Dipulangkan</option><option>Lewat</option></select></label>
+      <label>NAMA GURU (PEMINJAM)<input id="f_teacher_name"></label>
+      <label>ALAT PINJAMAN<input id="f_equipment_name" list="invList"></label>
+      <label>NO. SERIAL<input id="f_serial_no"></label>
+      <label>TARIKH PINJAMAN<input id="f_borrow_date" type="date"></label>
+      <label class="full">TUJUAN PINJAMAN<input id="f_purpose"></label>
       <label>SAKSI<input id="f_witness"></label>
       <label>PENGESAH<input id="f_approver"></label>
-      <label class="full">CATATAN<textarea id="f_remarks"></textarea></label>
+    </div>
+    <h4 style="margin:14px 0 8px;font-size:0.85rem;color:#c7d2fe">BAHAGIAN B — MAKLUMAT PEMULANGAN</h4>
+    <div class="sdg-grid">
+      <label>TARIKH PEMULANGAN<input id="f_return_date" type="date"></label>
+      <label>STATUS<select id="f_status"><option>Dipinjam</option><option>Dipulangkan</option><option>Lewat</option></select></label>
+      <label class="full">ADUAN<input id="f_complaint"></label>
+      <label>SAKSI (PEMULANGAN)<input id="f_return_witness"></label>
     </div>
     <datalist id="invList">{% for i in inventory %}<option value="{{ i.name }}">{% endfor %}</datalist>
+    {% set sign_roles = [('peminjam','Tandatangan Peminjam'), ('pengesah','Disahkan oleh')] %}
+    {% include "_esig.html" %}
     <div class="sdg-actions">
       <button type="button" class="btn" id="genBtn">Papar</button>
       <button type="button" class="btn" id="saveBtn">Simpan</button>
@@ -97,11 +95,26 @@
 <script>
 (function () {
   var data = null;
-  var KEYS = ['teacher_name','equipment_name','category','serial_no','quantity','borrow_date','borrow_time','purpose','expected_return','actual_return','condition_out','condition_in','status','witness','approver','remarks'];
   function $(id){ return document.getElementById(id); }
   function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
-  function collect(){ var o={}; KEYS.forEach(function(k){ o[k]=$('f_'+k).value.trim(); }); o.quantity = parseInt($('f_quantity').value)||1; return o; }
-  function fill(d){ data=d; KEYS.forEach(function(k){ if($('f_'+k)) $('f_'+k).value=d[k]===undefined?'':d[k]; }); $('formCard').style.display='block'; }
+  function collect(){
+    return { teacher_name: $('f_teacher_name').value.trim(), equipment_name: $('f_equipment_name').value.trim(),
+      serial_no: $('f_serial_no').value.trim(), borrow_date: $('f_borrow_date').value,
+      purpose: $('f_purpose').value.trim(), witness: $('f_witness').value.trim(),
+      approver: $('f_approver').value.trim(), return_date: $('f_return_date').value,
+      status: $('f_status').value, complaint: $('f_complaint').value.trim(),
+      return_witness: $('f_return_witness').value.trim(), signatures: (window.esigCollect && window.esigCollect()) || {} };
+  }
+  function fill(d){
+    data = d;
+    $('f_teacher_name').value=d.teacher_name||''; $('f_equipment_name').value=d.equipment_name||'';
+    $('f_serial_no').value=d.serial_no||''; $('f_borrow_date').value=d.borrow_date||'';
+    $('f_purpose').value=d.purpose||''; $('f_witness').value=d.witness||'';
+    $('f_approver').value=d.approver||''; $('f_return_date').value=d.return_date||'';
+    $('f_status').value=d.status||'Dipinjam'; $('f_complaint').value=d.complaint||'';
+    $('f_return_witness').value=d.return_witness||'';
+    $('formCard').style.display='block';
+  }
   function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
   $('autoBtn').onclick = function(){
     var instr = $('instr').value.trim(); if(!instr){ toast('Tulis arahan dahulu', true); return; }
@@ -112,10 +125,10 @@
   $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
   function renderPreview(){
     data = collect();
-    var labels = {teacher_name:'NAMA PEMINJAM',equipment_name:'NAMA PERKAKASAN',category:'KATEGORI',serial_no:'NOMBOR SIRI',quantity:'KUANTITI',borrow_date:'TARIKH PINJAM',borrow_time:'MASA PINJAM',purpose:'TUJUAN',expected_return:'TARIKH JANGKA PULANG',actual_return:'TARIKH PULANG SEBENAR',condition_out:'KEADAAN (PINJAM)',condition_in:'KEADAAN (PULANG)',status:'STATUS',witness:'SAKSI',approver:'PENGESAH',remarks:'CATATAN'};
     var h = '<h3>REKOD PINJAMAN PERKAKASAN ICT</h3><table>';
-    KEYS.forEach(function(k){ h += '<tr><td class="lbl">'+labels[k]+'</td><td>'+(data[k]===undefined?'—':String(data[k]).replace(/\n/g,'<br>')||'—')+'</td></tr>'; });
-    h += '</table><p style="margin-top:16px;font-size:0.8rem">Tandatangan Peminjam: ____________ &nbsp;&nbsp; Disahkan oleh: ____________</p>';
+    var rows = [['NAMA GURU (PEMINJAM)',data.teacher_name],['ALAT PINJAMAN',data.equipment_name],['NO. SERIAL',data.serial_no],['TARIKH PINJAMAN',data.borrow_date],['TUJUAN PINJAMAN',data.purpose],['SAKSI',data.witness],['TARIKH PEMULANGAN',data.return_date],['STATUS',data.status],['ADUAN',data.complaint],['SAKSI (PEMULANGAN)',data.return_witness]];
+    rows.forEach(function(r){ h += '<tr><td class="lbl">'+r[0]+'</td><td>'+(r[1]||'—')+'</td></tr>'; });
+    h += '</table>';
     $('docBody').innerHTML = h; $('doc').classList.add('show');
   }
   function dl(fmt){

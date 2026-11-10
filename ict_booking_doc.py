@@ -16,7 +16,8 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 from docgen import (styles, pdf_header_flowables, NumberedCanvas, _esc,
-                    _docx_cell, _docx_shade, docx_header, new_doc, add_title)
+                    _docx_cell, _docx_shade, docx_header, new_doc, add_title,
+                    pdf_signature_flowable, docx_signature_block)
 
 # Field order for the booking table: (key, label)
 FIELDS = [
@@ -82,20 +83,8 @@ def build_ict_pdf(data, out_path):
 
     story.append(Spacer(1, 40))
 
-    def block(title, name):
-        inner = Table([
-            [Paragraph(_esc(title), st["label"])],
-            [Paragraph("", st["sign"])],
-            [Paragraph("", st["sign"])],
-            [Paragraph("", st["sign"])],
-            [Paragraph("____________________________", st["sign"])],
-            [Paragraph(_esc(name or ""), st["sign"])],
-        ], colWidths=[80 * mm])
-        inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-        return inner
-
-    sig = Table([[block("Tandatangan Guru Pemohon:", data.get("teacher_name")),
-                  block("Disahkan oleh:", data.get("approver") or "")]],
+    sig = Table([[pdf_signature_flowable("pemohon", "Tandatangan Guru Pemohon:", data, st, data.get("teacher_name")),
+                  pdf_signature_flowable("disahkan", "Disahkan oleh:", data, st, data.get("approver"))]],
                 colWidths=[84 * mm, 84 * mm])
     sig.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story.append(sig)
@@ -130,16 +119,8 @@ def build_ict_docx(data, out_path):
 
     doc.add_paragraph()
     doc.add_paragraph()
-    sig = doc.add_table(rows=1, cols=2)
-    for j, (title, name) in enumerate([("Tandatangan Guru Pemohon:", data.get("teacher_name") or ""),
-                                        ("Disahkan oleh:", data.get("approver") or "")]):
-        cell = sig.rows[0].cells[j]
-        cell.text = ""
-        p1 = cell.paragraphs[0]; r1 = p1.add_run(title); r1.bold = True; r1.font.size = Pt(10)
-        cell.add_paragraph()
-        cell.add_paragraph()
-        cell.add_paragraph("____________________________")
-        cell.add_paragraph(name)
+    docx_signature_block(doc, "pemohon", "Tandatangan Guru Pemohon:", data, data.get("teacher_name"))
+    docx_signature_block(doc, "disahkan", "Disahkan oleh:", data, data.get("approver"))
 
     doc.save(str(out_path))
     return out_path

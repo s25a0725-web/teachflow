@@ -400,9 +400,112 @@ def new_doc():
     return doc
 
 
+def docx_signature_block(doc, role, label, data, name=None):
+    """Append a signature block (label + image or typed text) to a DOCX."""
+    from docx.shared import Pt, Cm
+    from esig import signature_path
+    img = signature_image(data, role)
+    sigs = data.get("signatures") or {}
+    entry = None
+    if isinstance(sigs, dict):
+        entry = sigs.get(role) or sigs.get(role.lower())
+    elif isinstance(sigs, list):
+        for s in sigs:
+            if (s.get("role") or "") == role:
+                entry = s
+                break
+    p = doc.add_paragraph()
+    r = p.add_run(label); r.bold = True; r.font.size = Pt(10)
+    if img:
+        doc.add_paragraph().add_run().add_picture(img, height=Cm(1.6))
+    elif entry and entry.get("type") == "typed":
+        tn = entry.get("signer_name") or name or ""
+        pr = doc.add_paragraph()
+        rr = pr.add_run(tn + " (tandatangan elektronik)"); rr.font.size = Pt(9)
+    else:
+        doc.add_paragraph()
+        doc.add_paragraph("____________________________")
+        if name:
+            doc.add_paragraph(name)
+
+
 def add_title(doc, text):
     from docx.shared import Pt
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     tp = doc.add_paragraph(); tp.alignment = WD_ALIGN_PARAGRAPH.CENTER
     tr = tp.add_run(text); tr.bold = True; tr.font.size = Pt(15)
     return tp
+
+
+# --------------------------------------------------------------------------
+# Signature embedding (shared e-signing)
+# --------------------------------------------------------------------------
+def signature_image(data, role):
+    """Return the absolute path of a signature image for the given role, or None.
+
+    `data["signatures"]` is a dict {role: {"file": fname, "path": abs, "type": ...}}
+    or a list of {role, file/path, type}. Resolves through the esig storage dir.
+    """
+    sigs = data.get("signatures") or {}
+    entry = None
+    if isinstance(sigs, dict):
+        entry = sigs.get(role) or sigs.get(role.lower())
+    elif isinstance(sigs, list):
+        for s in sigs:
+            if (s.get("role") or "") == role:
+                entry = s
+                break
+    if not entry:
+        return None
+    if entry.get("type") == "typed":
+        return None  # typed signatures render as text, not image
+    p = entry.get("path") or entry.get("file") or entry.get("url")
+    if not p:
+        return None
+    if p.startswith("http"):
+        return None  # URL only, image must be resolved server-side
+    if os.path.exists(str(p)):
+        return str(p)
+    # resolve relative filename through the esig dir
+    from esig import signature_path
+    return signature_path(str(p).split("/")[-1].split("\\")[-1])
+
+
+def pdf_signature_flowable(role, label, data, st, name=None):
+    """Return a flowable for a signature block, embedding an image if present."""
+    from reportlab.platypus import Paragraph, Table, TableStyle, Image, Flowable
+
+    img = signature_image(data, role)
+    sig_type = None
+    sigs = data.get("signatures") or {}
+    entry = None
+    if isinstance(sigs, dict):
+        entry = sigs.get(role) or sigs.get(role.lower())
+    elif isinstance(sigs, list):
+        for s in sigs:
+            if (s.get("role") or "") == role:
+                entry = s
+                break
+    if entry:
+        sig_type = entry.get("type")
+
+    inner_flow = []
+    if img:
+        w, h = _fit(img, 42 * mm, 18 * mm)
+        inner_flow.append(Image(img, width=w, height=h))
+    else:
+        inner_flow.append(Paragraph("", st["sign"]))
+        inner_flow.append(Paragraph("", st["sign"]))
+
+    if sig_type == "typed":
+        typed_name = (entry or {}).get("signer_name") or name or ""
+        inner_flow.append(Paragraph(_esc(typed_name) + " (tandatangan elektronik)", st["sign"]))
+    else:
+        inner_flow.append(Paragraph("____________________________", st["sign"]))
+        inner_flow.append(Paragraph(_esc(name or ""), st["sign"]))
+
+    inner = Table([[Paragraph(_esc(label), st["label"])]] + [[f] for f in inner_flow],
+                  colWidths=[80 * mm])
+    inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    return inner
+

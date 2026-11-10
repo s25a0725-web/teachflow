@@ -493,6 +493,19 @@ CREATE TABLE IF NOT EXISTS ict_loans (
     doc_json TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS sdg_signatures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    tool TEXT NOT NULL,
+    doc_id INTEGER,
+    role TEXT,
+    signer_name TEXT,
+    signer_email TEXT,
+    signature_file TEXT,
+    sign_type TEXT DEFAULT 'draw',
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 

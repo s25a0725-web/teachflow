@@ -1,0 +1,133 @@
+{# Shared e-signing widget. Includes a canvas-draw pad + upload + typed options.
+   Usage: include with sign_roles = [('role_key','Label'), ...].
+   The page's `data` object gets a `signatures` dict keyed by role_key. #}
+<div class="esig-wrap">
+  <h4 style="margin:16px 0 8px;font-size:0.85rem;color:#c7d2fe">TANDATANGAN ELEKTRONIK</h4>
+  {% for role, label in sign_roles %}
+  <div class="esig-block" data-role="{{ role }}">
+    <div class="esig-head">
+      <strong>{{ label }}</strong>
+      <span class="esig-mode">
+        <label><input type="radio" name="esig-mode-{{ role }}" value="draw" checked> Lukis</label>
+        <label><input type="radio" name="esig-mode-{{ role }}" value="upload"> Muat naik</label>
+        <label><input type="radio" name="esig-mode-{{ role }}" value="typed"> Taip</label>
+      </span>
+    </div>
+    <div class="esig-pad" data-pad="{{ role }}">
+      <canvas width="360" height="120" style="border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.95);cursor:crosshair;max-width:100%"></canvas>
+      <div class="esig-tools">
+        <button type="button" class="esig-clear">Padam</button>
+        <button type="button" class="esig-save" style="display:none">Guna</button>
+      </div>
+    </div>
+    <div class="esig-upload" data-up="{{ role }}" style="display:none">
+      <input type="file" accept="image/png,image/jpeg">
+      <div class="esig-preview" style="display:none"><img alt="signature"></div>
+    </div>
+    <div class="esig-typed" data-typed="{{ role }}" style="display:none">
+      <input type="text" placeholder="Nama penandatangan" style="padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:rgba(0,0,0,0.28);color:var(--text)">
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<style>
+.esig-wrap { margin-top: 12px; }
+.esig-block { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.esig-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; font-size: 0.82rem; }
+.esig-mode label { font-size: 0.72rem; color: var(--muted); margin-left: 8px; }
+.esig-tools { margin-top: 6px; display: flex; gap: 8px; }
+.esig-tools button { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+.esig-tools button:hover { color: #fff; border-color: var(--accent); }
+.esig-upload input[type=file] { font-size: 0.75rem; color: var(--muted); }
+.esig-preview img { max-height: 90px; margin-top: 6px; border-radius: 6px; }
+.esig-typed input { width: 100%; font-size: 0.82rem; }
+</style>
+<script>
+(function () {
+  document.querySelectorAll('.esig-block').forEach(function (block) {
+    var role = block.getAttribute('data-role');
+    var radios = block.querySelectorAll('input[type=radio]');
+    var pad = block.querySelector('[data-pad]');
+    var canvas = pad.querySelector('canvas');
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+    var clearBtn = block.querySelector('.esig-clear');
+    var upDiv = block.querySelector('[data-up]');
+    var typedDiv = block.querySelector('[data-typed]');
+    var fileInput = upDiv.querySelector('input[type=file]');
+    var previewImg = upDiv.querySelector('.esig-preview img');
+
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#1f2937';
+
+    function pos(e) {
+      var r = canvas.getBoundingClientRect();
+      var x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+      var y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+      return [x, y];
+    }
+    function begin(e) { drawing = true; var p = pos(e); ctx.beginPath(); ctx.moveTo(p[0], p[1]); e.preventDefault(); }
+    function move(e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p[0], p[1]); ctx.stroke(); e.preventDefault(); }
+    function end() { drawing = false; syncSignature(); }
+    canvas.addEventListener('mousedown', begin);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('touchstart', begin);
+    canvas.addEventListener('touchmove', move);
+    canvas.addEventListener('touchend', end);
+
+    clearBtn.addEventListener('click', function () { ctx.clearRect(0, 0, canvas.width, canvas.height); syncSignature(); });
+
+    function syncSignature() {
+      var mode = block.querySelector('input[type=radio]:checked').value;
+      if (mode === 'draw') {
+        var url = canvas.toDataURL('image/png');
+        if (isBlank()) { setSig(null); } else { setSig({ type: 'draw', signature: url, dataUrl: url }); }
+      }
+    }
+    function isBlank() {
+      var d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      for (var i = 3; i < d.length; i += 4) { if (d[i] !== 0) return false; }
+      return true;
+    }
+    function setSig(s) {
+      window._esig = window._esig || {};
+      window._esig[role] = s;
+    }
+
+    radios.forEach(function (r) {
+      r.addEventListener('change', function () {
+        pad.style.display = r.value === 'draw' ? 'block' : 'none';
+        upDiv.style.display = r.value === 'upload' ? 'block' : 'none';
+        typedDiv.style.display = r.value === 'typed' ? 'block' : 'none';
+        syncSignature();
+      });
+    });
+
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        previewImg.src = rd.result;
+        previewImg.parentElement.style.display = 'block';
+        setSig({ type: 'upload', signature: rd.result, dataUrl: rd.result });
+      };
+      rd.readAsDataURL(f);
+    });
+
+    typedDiv.querySelector('input').addEventListener('input', function () {
+      setSig({ type: 'typed', signer_name: this.value.trim() });
+    });
+  });
+
+  // attach collected signatures into the page's export data before download
+  window.esigCollect = function () {
+    var out = {};
+    Object.keys(window._esig || {}).forEach(function (role) {
+      var s = window._esig[role];
+      if (s) out[role] = s;
+    });
+    return out;
+  };
+})();
+</script>

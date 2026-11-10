@@ -17,7 +17,8 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
 
 from docgen import (styles, pdf_header_flowables, NumberedCanvas, _esc, _fit,
-                    _docx_cell, _docx_shade, docx_header, new_doc, add_title)
+                    _docx_cell, _docx_shade, docx_header, new_doc, add_title,
+                    pdf_signature_flowable, docx_signature_block)
 
 FIELDS = [
     ("program", "PROGRAM"),
@@ -141,20 +142,8 @@ def build_koko_pdf(data, out_path):
 
     story.append(Spacer(1, 24))
 
-    def block(title, name, pos):
-        inner = Table([
-            [Paragraph(_esc(title), st["label"])],
-            [Paragraph("", st["sign"])],
-            [Paragraph("", st["sign"])],
-            [Paragraph("____________________________", st["sign"])],
-            [Paragraph(_esc(name or ""), st["sign"])],
-            [Paragraph(_esc(pos or ""), st["sign"])],
-        ], colWidths=[80 * mm])
-        inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-        return inner
-
-    sig = Table([[block("Disediakan oleh:", data.get("disediakan_nama") or "", data.get("disediakan_jawatan") or ""),
-                  block("Disahkan oleh:", data.get("disahkan_nama") or "", data.get("disahkan_jawatan") or "")]],
+    sig = Table([[pdf_signature_flowable("disediakan", "Disediakan oleh:", data, st, data.get("disediakan_nama")),
+                  pdf_signature_flowable("disahkan", "Disahkan oleh:", data, st, data.get("disahkan_nama"))]],
                 colWidths=[84 * mm, 84 * mm])
     sig.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story.append(sig)
@@ -205,19 +194,8 @@ def build_koko_docx(data, out_path):
         doc.add_paragraph("Tiada gambar dimuat naik.")
 
     doc.add_paragraph()
-    sig = doc.add_table(rows=1, cols=2)
-    for j, (title, name, pos) in enumerate([
-        ("Disediakan oleh:", data.get("disediakan_nama") or "", data.get("disediakan_jawatan") or ""),
-        ("Disahkan oleh:", data.get("disahkan_nama") or "", data.get("disahkan_jawatan") or ""),
-    ]):
-        cell = sig.rows[0].cells[j]
-        cell.text = ""
-        p = cell.paragraphs[0]; r = p.add_run(title); r.bold = True; r.font.size = Pt(10)
-        cell.add_paragraph()
-        cell.add_paragraph()
-        cell.add_paragraph("____________________________")
-        cell.add_paragraph(name)
-        cell.add_paragraph(pos)
+    docx_signature_block(doc, "disediakan", "Disediakan oleh:", data, data.get("disediakan_nama"))
+    docx_signature_block(doc, "disahkan", "Disahkan oleh:", data, data.get("disahkan_nama"))
 
     doc.save(str(out_path))
     return out_path

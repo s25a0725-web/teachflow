@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Tool 4 — LAPORAN PERHIMPUNAN (School Assembly Report).
 
-Reference layout: header, centred title, bordered table of week/date/day/
-venue/duty teacher/agenda/anthems/Rukun Negara/speeches/announcements/
-performances/special activities/messages/remarks/conclusion, then a
-Guru Bertugas signature block.
+Reproduces the reference layout: header, centred title, then rows
+MINGGU/TARIKH/HARI, GURU BERUCAP, GURU BERTUGAS MINGGU INI (two columns),
+TAJUK PERHIMPUNAN, AGENDA (numbered), then a report table with columns
+UCAPAN GURU BESAR / PESANAN BARISAN PENTADBIR / PERSEMBAHAN MURID / CATATAN,
+then DISEDIAKAN OLEH PENYEDIA / DISEMAK OLEH signature blocks (e-signing aware).
 """
 import os
 
@@ -14,27 +15,31 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 from docgen import (styles, pdf_header_flowables, NumberedCanvas, _esc,
-                    _docx_cell, _docx_shade, docx_header, new_doc, add_title)
+                    _docx_cell, _docx_shade, docx_header, new_doc, add_title,
+                    pdf_signature_flowable, docx_signature_block)
 
 FIELDS = [
     ("week", "MINGGU"),
     ("date", "TARIKH"),
     ("day", "HARI"),
-    ("venue", "TEMPAT PERHIMPUNAN"),
-    ("teacher_duty", "GURU BERTUGAS"),
+    ("teacher_speech", "GURU BERUCAP"),
+    ("teacher_duty_1", "GURU BERTUGAS MINGGU INI"),
+    ("teacher_duty_2", "GURU BERTUGAS MINGGU INI"),
+    ("topic", "TAJUK PERHIMPUNAN"),
     ("agenda", "AGENDA"),
-    ("negaraku", "LAGU NEGARAKU"),
-    ("state_anthem", "LAGU NEGERI"),
-    ("rukun_negara", "IKRAR RUKUN NEGARA"),
     ("headteacher_speech", "UCAPAN GURU BESAR"),
-    ("teacher_announcements", "PENGUMUMAN GURU"),
-    ("student_announcements", "PENGUMUMAN MURID"),
+    ("admin_notices", "PESANAN BARISAN PENTADBIR"),
     ("performances", "PERSEMBAHAN MURID"),
-    ("special_activities", "AKTIVITI KHAS"),
-    ("messages", "MESEJ PENTING"),
-    ("remarks", "CATATAN KESELURUHAN"),
-    ("conclusion", "KESIMPULAN"),
+    ("notes", "CATATAN"),
 ]
+
+
+def _as_list(val):
+    if isinstance(val, list):
+        return [str(x).strip() for x in val if str(x).strip()]
+    if not val:
+        return []
+    return [ln.strip() for ln in str(val).split("\n") if ln.strip()]
 
 
 def build_assembly_pdf(data, out_path):
@@ -48,15 +53,48 @@ def build_assembly_pdf(data, out_path):
     story.extend(pdf_header_flowables(data, st))
     story.append(Paragraph("LAPORAN PERHIMPUNAN", st["title"]))
 
-    rows = []
-    for key, label in FIELDS:
-        val = data.get(key) or ""
-        rows.append([Paragraph(label, st["label"]), Paragraph(_esc(val) or "—", st["value"])])
+    def lp(t):
+        return Paragraph(_esc(t), st["label"])
+    def vp(k, default="—"):
+        return Paragraph(_esc(data.get(k) or "") or default, st["value"])
 
-    main = Table(rows, colWidths=[52 * mm, 116 * mm])
+    from reportlab.platypus import Flowable
+
+    class _V(Flowable):
+        def __init__(self, items):
+            super().__init__()
+            self.items = items
+
+        def wrap(self, aw, ah):
+            self.width = aw
+            self.height = 0
+            for it in self.items:
+                w, h = it.wrap(aw, ah)
+                self.height += h
+            return aw, self.height
+
+        def draw(self):
+            y = self.height
+            for it in self.items:
+                w, h = it.wrap(self.width, self.height)
+                it.drawOn(self.canv, 0, y - h)
+                y -= h
+
+    agenda = _as_list(data.get("agenda"))
+    agenda_flow = _V([Paragraph("%d. %s" % (i + 1, _esc(v)), st["value"]) for i, v in enumerate(agenda)]) if agenda else Paragraph("—", st["value"])
+
+    rows = [
+        [lp("MINGGU"), vp("week"), lp("TARIKH"), vp("date"), lp("HARI"), vp("day")],
+        [lp("GURU BERUCAP"), vp("teacher_speech"), "", "", "", ""],
+        [lp("GURU BERTUGAS MINGGU INI"), vp("teacher_duty_1"), lp("GURU BERTUGAS MINGGU INI"), vp("teacher_duty_2"), "", ""],
+        [lp("TAJUK PERHIMPUNAN"), vp("topic"), "", "", "", ""],
+        [lp("AGENDA"), agenda_flow, "", "", "", ""],
+    ]
+    main = Table(rows, colWidths=[34 * mm, 50 * mm, 34 * mm, 50 * mm])
     main.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.8, colors.HexColor("#64748b")),
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eef2ff")),
+        ("SPAN", (2, 0), (3, 0)),
+        ("SPAN", (4, 0), (5, 0)),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 6),
         ("RIGHTPADDING", (0, 0), (-1, -1), 6),
@@ -65,16 +103,32 @@ def build_assembly_pdf(data, out_path):
     ]))
     story.append(main)
 
-    story.append(Spacer(1, 40))
-    inner = Table([
-        [Paragraph("Guru Bertugas,", st["label"])],
-        [Paragraph("", st["sign"])],
-        [Paragraph("", st["sign"])],
-        [Paragraph("____________________________", st["sign"])],
-        [Paragraph(_esc(data.get("teacher_duty") or ""), st["sign"])],
-    ], colWidths=[84 * mm])
-    inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-    story.append(inner)
+    # report table (4 columns)
+    story.append(Spacer(1, 8))
+    report = Table([
+        [Paragraph("UCAPAN GURU BESAR", st["label"]), Paragraph("PESANAN BARISAN PENTADBIR", st["label"]),
+         Paragraph("PERSEMBAHAN MURID", st["label"]), Paragraph("CATATAN", st["label"])],
+        [Paragraph(_esc(data.get("headteacher_speech") or "TIADA"), st["value"]),
+         Paragraph(_esc(data.get("admin_notices") or "TIADA"), st["value"]),
+         Paragraph(_esc(data.get("performances") or "TIADA"), st["value"]),
+         Paragraph(_esc(data.get("notes") or ""), st["value"])],
+    ], colWidths=[42 * mm, 42 * mm, 42 * mm, 42 * mm])
+    report.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.8, colors.HexColor("#64748b")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef2ff")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(report)
+
+    story.append(Spacer(1, 36))
+    sig = Table([[pdf_signature_flowable("penyedia", "DISEDIAKAN OLEH PENYEDIA:", data, st, data.get("disediakan_nama")),
+                  pdf_signature_flowable("disemak", "DISEMAK OLEH:", data, st, data.get("disemak_nama"))]],
+                colWidths=[84 * mm, 84 * mm])
+    sig.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story.append(sig)
 
     doc.build(story, canvasmaker=NumberedCanvas)
     return out_path
@@ -87,22 +141,37 @@ def build_assembly_docx(data, out_path):
     docx_header(doc, data)
     add_title(doc, "LAPORAN PERHIMPUNAN")
 
-    table = doc.add_table(rows=0, cols=2)
+    table = doc.add_table(rows=0, cols=4)
     table.style = "Table Grid"
-    for key, label in FIELDS:
+    agenda = _as_list(data.get("agenda"))
+    agenda_txt = "\n".join("%d. %s" % (i + 1, x) for i, x in enumerate(agenda)) if agenda else "—"
+    rows = [
+        ("MINGGU", data.get("week"), "TARIKH", data.get("date")),
+        ("GURU BERUCAP", data.get("teacher_speech"), "GURU BERTUGAS MINGGU INI", "%s / %s" % (data.get("teacher_duty_1") or "", data.get("teacher_duty_2") or "")),
+        ("TAJUK PERHIMPUNAN", data.get("topic"), "", ""),
+        ("AGENDA", agenda_txt, "", ""),
+    ]
+    for a, b, c, d in rows:
         cells = table.add_row().cells
-        _docx_cell(cells[0], label, bold=True)
-        _docx_shade(cells[0], "EEF2FF")
-        _docx_cell(cells[1], data.get(key) or "—")
+        _docx_cell(cells[0], a, bold=True); _docx_shade(cells[0], "EEF2FF")
+        _docx_cell(cells[1], b or "—")
+        _docx_cell(cells[2], c, bold=True); _docx_shade(cells[2], "EEF2FF")
+        _docx_cell(cells[3], d or "—")
+
+    doc.add_paragraph()
+    report = doc.add_table(rows=2, cols=4)
+    report.style = "Table Grid"
+    heads = ["UCAPAN GURU BESAR", "PESANAN BARISAN PENTADBIR", "PERSEMBAHAN MURID", "CATATAN"]
+    vals = [data.get("headteacher_speech") or "TIADA", data.get("admin_notices") or "TIADA",
+            data.get("performances") or "TIADA", data.get("notes") or ""]
+    for j in range(4):
+        _docx_cell(report.rows[0].cells[j], heads[j], bold=True); _docx_shade(report.rows[0].cells[j], "EEF2FF")
+        _docx_cell(report.rows[1].cells[j], vals[j])
 
     doc.add_paragraph()
     doc.add_paragraph()
-    p = doc.add_paragraph()
-    r = p.add_run("Guru Bertugas,"); r.bold = True; r.font.size = Pt(10)
-    doc.add_paragraph()
-    doc.add_paragraph()
-    doc.add_paragraph("____________________________")
-    doc.add_paragraph(data.get("teacher_duty") or "")
+    docx_signature_block(doc, "penyedia", "DISEDIAKAN OLEH PENYEDIA:", data, data.get("disediakan_nama"))
+    docx_signature_block(doc, "disemak", "DISEMAK OLEH:", data, data.get("disemak_nama"))
 
     doc.save(str(out_path))
     return out_path

@@ -73,6 +73,7 @@ def create_app():
     from duty import bp as duty_bp
     from assembly import bp as assembly_bp
     from loan import bp as loan_bp
+    from esig import bp as esig_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(views_bp)
     app.register_blueprint(documents_bp)
@@ -89,6 +90,7 @@ def create_app():
     app.register_blueprint(duty_bp)
     app.register_blueprint(assembly_bp)
     app.register_blueprint(loan_bp)
+    app.register_blueprint(esig_bp)
 
     @app.context_processor
     def inject_globals():
