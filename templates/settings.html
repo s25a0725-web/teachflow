@@ -20,10 +20,16 @@
     <input type="hidden" name="action" value="branding">
     <label>{{ t('settings_school_name', lang) }}</label>
     <input name="school_name" value="{{ school_name }}" placeholder="SJK(T) Sepang">
+    <label>{{ t('settings_school_name_en', lang) }}</label>
+    <input name="school_name_en" value="{{ school_name_en }}" placeholder="SEK.JEN.KEB (TAMIL) SEPANG">
+    <label>{{ t('settings_school_address', lang) }}</label>
+    <input name="school_address" value="{{ school_address }}" placeholder="43900 SEPANG">
     <label>{{ t('settings_tagline', lang) }}</label>
     <input name="tagline" value="{{ tagline }}">
     <label>{{ t('settings_logo', lang) }}</label>
     <input type="file" name="logo" accept="image/*,.svg">
+    <label>{{ t('settings_emblem', lang) }}</label>
+    <input type="file" name="emblem" accept="image/*">
     <label>{{ t('settings_background', lang) }}</label>
     <select name="theme">
       <option value="default" {{ 'selected' if theme == 'default' }}>Default</option>
@@ -43,6 +49,10 @@
   <form method="post" class="mt">
     <input type="hidden" name="action" value="remove_logo">
     <button class="secondary" type="submit">{{ t('settings_remove_logo', lang) }}</button>
+  </form>
+  <form method="post" class="mt">
+    <input type="hidden" name="action" value="remove_emblem">
+    <button class="secondary" type="submit">{{ t('settings_remove_emblem', lang) }}</button>
   </form>
   <form method="post" class="mt">
     <input type="hidden" name="action" value="remove_bg">

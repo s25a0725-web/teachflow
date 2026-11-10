@@ -463,6 +463,8 @@ def settings():
         action = request.form.get("action")
         if action == "branding":
             set_setting("school_name", request.form.get("school_name", "").strip())
+            set_setting("school_name_en", request.form.get("school_name_en", "").strip())
+            set_setting("school_address", request.form.get("school_address", "").strip())
             set_setting("tagline", request.form.get("tagline", "").strip())
             set_setting("theme", request.form.get("theme", "default").strip())
             f = request.files.get("logo")
@@ -473,6 +475,14 @@ def settings():
                 fname = f"logo{ext}"
                 f.save(BRANDING_DIR / fname)
                 set_setting("logo_filename", fname)
+            e = request.files.get("emblem")
+            if e and e.filename:
+                ext = Path(e.filename).suffix.lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+                    ext = ".png"
+                ename = f"emblem{ext}"
+                e.save(BRANDING_DIR / ename)
+                set_setting("emblem_filename", ename)
             b = request.files.get("bg_image")
             if b and b.filename:
                 ext = Path(b.filename).suffix.lower()
@@ -484,6 +494,9 @@ def settings():
             flash("settings_saved", "success")
         elif action == "remove_logo":
             set_setting("logo_filename", "")
+            flash("settings_saved", "success")
+        elif action == "remove_emblem":
+            set_setting("emblem_filename", "")
             flash("settings_saved", "success")
         elif action == "remove_bg":
             set_setting("bg_image", "")
@@ -506,10 +519,13 @@ def settings():
     users = userstore.all_users()
     return render_template("settings.html", users=users,
                            school_name=get_setting("school_name") or "",
+                           school_name_en=get_setting("school_name_en") or "",
+                           school_address=get_setting("school_address") or "",
                            tagline=get_setting("tagline") or "",
                            theme=get_setting("theme") or "default",
                            bg_image=get_setting("bg_image") or "",
-                           has_logo=bool(get_setting("logo_filename")))
+                           has_logo=bool(get_setting("logo_filename")),
+                           has_emblem=bool(get_setting("emblem_filename")))
 
 
 # --------------------------------------------------------------------------

@@ -341,6 +341,16 @@ CREATE TABLE IF NOT EXISTS rph_documents (
     rph_json TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS minit_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    jenis TEXT,
+    unit TEXT,
+    minit_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 

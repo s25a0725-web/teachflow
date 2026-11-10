@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Minit Curai · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.mc-wrap { max-width: 920px; margin: 0 auto; }
+.mc-card { padding: 1.4rem 1.5rem; }
+.mc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.mc-grid .full { grid-column: 1 / -1; }
+.mc-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: var(--muted); }
+.mc-grid input, .mc-grid textarea, .mc-grid select {
+  padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.9rem; font-family: inherit;
+}
+.mc-grid input:focus, .mc-grid textarea:focus { outline: none; border-color: var(--accent); }
+.mc-grid textarea { resize: vertical; min-height: 64px; }
+.mc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.mc-actions .btn { margin: 0; }
+.mc-doc { margin-top: 20px; display: none; }
+.mc-doc.show { display: block; }
+.mc-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.mc-doc-title { font-weight: 800; font-size: 1.15rem; color: #fff; }
+.mc-doc-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.mc-sec { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; background: rgba(255,255,255,0.02); }
+.mc-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.mc-sec-head h3 { margin: 0; font-size: 0.92rem; color: #c7d2fe; font-weight: 700; }
+.mc-sec textarea { width: 100%; min-height: 60px; resize: vertical; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit; line-height: 1.5; }
+.mc-sec textarea:focus { outline: none; border-color: var(--accent); }
+.mc-regen { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 4px 10px; border-radius: 7px; }
+.mc-regen:hover { color: #fff; border-color: var(--accent); }
+.mc-meta { display: grid; grid-template-columns: 150px 1fr; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+.mc-meta > div { padding: 7px 11px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.mc-meta > div:nth-child(odd) { background: rgba(99,102,241,0.1); color: var(--muted); font-weight: 600; }
+.mc-meta input, .mc-meta textarea { width: 100%; background: none; border: none; color: var(--text); font-size: 0.85rem; font-family: inherit; resize: vertical; }
+.mc-meta input:focus, .mc-meta textarea:focus { outline: none; }
+.mc-list { display: flex; flex-direction: column; gap: 6px; }
+.mc-list-item { display: flex; gap: 6px; align-items: center; }
+.mc-list-item .num { color: var(--muted); font-size: 0.8rem; min-width: 20px; }
+.mc-list-item input { flex: 1; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.85rem; }
+.mc-list-item .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+.mc-list-item .del:hover { color: #fb7185; }
+.mc-add { background: none; border: 1px dashed var(--border-strong); color: var(--muted); cursor: pointer; font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; margin-top: 6px; }
+.mc-add:hover { color: #fff; }
+.mc-photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.mc-photo { border: 1px solid var(--border); border-radius: 10px; padding: 8px; text-align: center; }
+.mc-photo img { max-width: 100%; max-height: 160px; border-radius: 6px; object-fit: contain; }
+.mc-photo input[type=file] { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+.mc-photo input[type=text] { width: 100%; margin-top: 6px; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.8rem; }
+.mc-sig { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mc-sig .sig { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.mc-sig .sig h4 { margin: 0 0 10px; font-size: 0.9rem; color: #fff; }
+.mc-sig .sig label { display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.mc-sig .sig input { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.82rem; }
+.mc-sig .sig .sig-line { margin-top: 18px; border-top: 1px solid var(--border-strong); padding-top: 4px; font-size: 0.72rem; color: var(--muted); text-align: center; }
+.mc-hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+@media (max-width: 640px) { .mc-sig { grid-template-columns: 1fr; } }
+@media print { .mc-wrap form, .mc-doc-head, .mc-doc-tools, .mc-regen, .mc-add, .del { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="mc-wrap">
+  <h2>Minit Curai</h2>
+  <p class="mc-hint">{{ t('mc_subtitle', lang) }}</p>
+
+  <div class="card mc-card">
+    <div class="mc-grid">
+      <label class="full">PERKARA<input id="f_perkara" placeholder="Tajuk program / kursus / mesyuarat"></label>
+      <label>JENIS<select id="f_jenis">
+        <option value="Taklimat">Taklimat</option><option value="Bengkel">Bengkel</option>
+        <option value="Kursus">Kursus</option><option value="Mesyuarat">Mesyuarat</option>
+        <option value="Seminar">Seminar</option>
+      </select></label>
+      <label>UNIT<select id="f_unit">
+        <option value="Kurikulum">Kurikulum</option><option value="HEM">HEM</option>
+        <option value="Kokurikulum">Kokurikulum</option><option value="Pentadbiran">Pentadbiran</option>
+      </select></label>
+      <label>NAMA PEGAWAI<input id="f_nama_pegawai"></label>
+      <label>JAWATAN<input id="f_jawatan" placeholder="Ketua Panitia"></label>
+      <label>TARIKH<input id="f_tarikh" placeholder="5/6/2026"></label>
+      <label>MASA<input id="f_masa" placeholder="11.00 Pagi - 1.30 Petang"></label>
+      <label>TEMPAT<input id="f_tempat" placeholder="Google Meet"></label>
+      <label>PENGANJUR<input id="f_penganjur" placeholder="PPD Sepang"></label>
+      <label class="full">KEHADIRAN PEGAWAI<textarea id="f_kehadiran" placeholder="Nama pegawai yang hadir"></textarea></label>
+      <label class="full">MAKLUMAN<textarea id="f_makluman" placeholder="Sasaran penerima / guru yang dimaklumkan"></textarea></label>
+      <label class="full">ISU DIBINCANGKAN<textarea id="f_isu" placeholder="Catatan perbincangan (AI akan menyusun menjadi perenggan bernombor)"></textarea></label>
+      <label class="full">TINDAKAN SUSULAN<textarea id="f_tindakan" placeholder="Tindakan susulan"></textarea></label>
+      <label class="full">BAHAN EDARAN<textarea id="f_bahan" placeholder="Bahan edaran (atau biarkan kosong untuk 'Tiada')"></textarea></label>
+    </div>
+    <div class="mc-actions">
+      <button type="button" class="btn" id="genBtn">{{ t('mc_generate', lang) }}</button>
+      <span class="mc-hint" id="genStatus" style="display:none"></span>
+    </div>
+  </div>
+
+  <div class="mc-doc" id="doc">
+    <div class="mc-doc-head">
+      <div class="mc-doc-title">{{ t('mc_preview', lang) }}</div>
+      <div class="mc-doc-tools">
+        <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+        <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+        <button type="button" class="btn small" id="saveBtn">{{ t('save', lang) }}</button>
+      </div>
+    </div>
+    <div id="docBody"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var FIELDS = {{ fields_json | safe }};
+  var SCHOOL = {{ school_json | safe }};
+  var minit = null;
+
+  function $(id) { return document.getElementById(id); }
+  function toast(msg, err) {
+    var t = document.createElement('div');
+    t.className = 'ai-toast' + (err ? ' err' : '');
+    t.textContent = msg; t.style.display = 'block';
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  function formFields() {
+    return {
+      school_name: SCHOOL.school_name, school_name_en: SCHOOL.school_name_en, school_address: SCHOOL.school_address,
+      perkara: $('f_perkara').value.trim(),
+      jenis: $('f_jenis').value,
+      unit: $('f_unit').value,
+      nama_pegawai: $('f_nama_pegawai').value.trim(),
+      jawatan: $('f_jawatan').value.trim(),
+      tarikh: $('f_tarikh').value.trim(),
+      masa: $('f_masa').value.trim(),
+      tempat: $('f_tempat').value.trim(),
+      penganjur: $('f_penganjur').value.trim(),
+      kehadiran: $('f_kehadiran').value.trim(),
+      makluman: $('f_makluman').value.trim(),
+      isu: $('f_isu').value,
+      tindakan: $('f_tindakan').value,
+      bahan: $('f_bahan').value,
+      photos: [], disediakan_nama: '', disediakan_jawatan: '', disediakan_tarikh: '',
+      disahkan_nama: '', disahkan_jawatan: '', disahkan_sekolah: SCHOOL.school_name
+    };
+  }
+
+  function splitLines(v) {
+    if (Array.isArray(v)) return v.filter(function (x) { return String(x).trim(); });
+    if (!v) return [];
+    return String(v).split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
+  function buildDoc(data) {
+    minit = data;
+    var body = $('docBody');
+    body.innerHTML = '';
+
+    // Main table (label/value)
+    var meta = document.createElement('div');
+    meta.className = 'mc-meta';
+    FIELDS.forEach(function (f) {
+      var key = f[0], label = f[1];
+      var dv = document.createElement('div'); dv.textContent = label;
+      var di = document.createElement('div');
+      if (key === 'isu' || key === 'tindakan' || key === 'bahan') {
+        var ta = document.createElement('textarea');
+        ta.value = (data[key] || []).map(function (x, i) {
+          return (key === 'bahan' ? '- ' : (i + 1) + '. ') + x;
+        }).join('\n');
+        ta.addEventListener('input', function () {
+          data[key] = splitLines(ta.value.replace(/^\s*(?:\d+\.\s*|- )/gm, ''));
+        });
+        di.appendChild(ta);
+      } else {
+        var inp = document.createElement('input');
+        inp.value = data[key] || '';
+        inp.addEventListener('input', function () { data[key] = inp.value; });
+        di.appendChild(inp);
+      }
+      meta.appendChild(dv); meta.appendChild(di);
+    });
+    body.appendChild(meta);
+
+    // Photos (FOTO 1 / FOTO 2)
+    var ph = document.createElement('div');
+    ph.className = 'mc-sec';
+    ph.innerHTML = '<div class="mc-sec-head"><h3>EVIDENS (FOTO)</h3></div>';
+    var grid = document.createElement('div');
+    grid.className = 'mc-photos';
+    function addPhotoSlot(idx) {
+      var slot = document.createElement('div');
+      slot.className = 'mc-photo';
+      var p = data.photos[idx] || { path: '', caption: '' };
+      slot.innerHTML = '<img style="display:' + (p.url ? 'block' : 'none') + '" src="' + (p.url || '') + '">'
+        + '<input type="file" accept="image/*"><input type="text" placeholder="Kapsyen" value="' + (p.caption || '').replace(/"/g, '&quot;') + '">';
+      var file = slot.querySelector('input[type=file]');
+      var img = slot.querySelector('img');
+      var cap = slot.querySelector('input[type=text]');
+      cap.addEventListener('input', function () { data.photos[idx] = data.photos[idx] || {}; data.photos[idx].caption = cap.value; });
+      file.addEventListener('change', function () {
+        var fd = new FormData(); fd.append('file', file.files[0]);
+        fetch('/minit-curai/photo', { method: 'POST', body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            data.photos[idx] = { name: j.name, path: j.url, caption: cap.value };
+            img.src = j.url; img.style.display = 'block';
+          })
+          .catch(function () { toast('Upload failed', true); });
+      });
+      grid.appendChild(slot);
+    }
+    addPhotoSlot(0); addPhotoSlot(1);
+    ph.appendChild(grid);
+    body.appendChild(ph);
+
+    // Signatures
+    var sig = document.createElement('div');
+    sig.className = 'mc-sig';
+    function sigBlock(title, prefix) {
+      var d = document.createElement('div'); d.className = 'sig';
+      var h = document.createElement('h4'); h.textContent = title; d.appendChild(h);
+      ['nama', 'jawatan', 'tarikh'].forEach(function (f) {
+        var lbl = document.createElement('label'); lbl.textContent = f.toUpperCase();
+        var inp = document.createElement('input');
+        var key = prefix + '_' + f;
+        if (prefix === 'disahkan' && f === 'tarikh') { key = prefix + '_sekolah'; lbl.textContent = 'SEKOLAH'; }
+        if (prefix === 'disahkan' && f === 'tarikh') { inp.value = data[prefix + '_sekolah'] || ''; }
+        else inp.value = data[key] || '';
+        inp.addEventListener('input', function () { data[key] = inp.value; });
+        lbl.appendChild(inp); d.appendChild(lbl);
+      });
+      var line = document.createElement('div'); line.className = 'sig-line'; line.textContent = '(Tandatangan)';
+      d.appendChild(line);
+      return d;
+    }
+    sig.appendChild(sigBlock('DISEDIAKAN OLEH', 'disediakan'));
+    sig.appendChild(sigBlock('DISAHKAN OLEH', 'disahkan'));
+    body.appendChild(sig);
+
+    $('doc').classList.add('show');
+    $('doc').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('genBtn').addEventListener('click', function () {
+    var fields = formFields();
+    if (!fields.perkara && !fields.isu) { toast('{{ t('mc_need_info', lang) }}', true); return; }
+    $('genStatus').style.display = 'inline';
+    $('genStatus').textContent = '{{ t('ai_thinking', lang) }}';
+    fetch('/minit-curai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        $('genStatus').style.display = 'none';
+        if (j.minit) buildDoc(j.minit);
+        else toast('Generation failed', true);
+      })
+      .catch(function () { $('genStatus').style.display = 'none'; toast('Generation failed', true); });
+  });
+
+  function download(fmt) {
+    if (!minit) return;
+    fetch('/minit-curai/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minit: minit, format: fmt }) })
+      .then(function (r) { if (!r.ok) throw 0; return r.blob(); })
+      .then(function (b) {
+        var u = URL.createObjectURL(b);
+        var a = document.createElement('a');
+        a.href = u; a.download = (fmt === 'pdf' ? 'Minit_Curai.pdf' : 'Minit_Curai.docx');
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(u);
+      })
+      .catch(function () { toast('Download failed', true); });
+  }
+  $('pdfBtn').addEventListener('click', function () { download('pdf'); });
+  $('docxBtn').addEventListener('click', function () { download('docx'); });
+  $('saveBtn').addEventListener('click', function () {
+    if (!minit) return;
+    fetch('/minit-curai/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minit: minit }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j.ok) toast('{{ t('mc_saved', lang) }} ✓'); else toast('Save failed', true); })
+      .catch(function () { toast('Save failed', true); });
+  });
+})();
+</script>
+{% endblock %}
