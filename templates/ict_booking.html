@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Rekod Penempahan Bilik ICT · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.sdg-wrap { max-width: 960px; margin: 0 auto; }
+.sdg-card { padding: 1.4rem 1.5rem; }
+.sdg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sdg-grid .full { grid-column: 1 / -1; }
+.sdg-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
+.sdg-grid input, .sdg-grid textarea, .sdg-grid select {
+  padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit;
+}
+.sdg-grid input:focus, .sdg-grid textarea:focus { outline: none; border-color: var(--accent); }
+.sdg-grid textarea { resize: vertical; min-height: 58px; }
+.sdg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.sdg-hint { font-size: 0.8rem; color: var(--muted); }
+.sdg-conflict { margin-top: 12px; padding: 10px 12px; border-radius: 9px; background: rgba(251,113,133,0.12); border: 1px solid rgba(251,113,133,0.4); color: #fecaca; font-size: 0.82rem; display: none; }
+.sdg-conflict.show { display: block; }
+.sdg-doc { margin-top: 20px; display: none; }
+.sdg-doc.show { display: block; }
+.sdg-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sdg-doc-title { font-weight: 800; font-size: 1.1rem; color: #fff; }
+.sdg-doc-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.sdg-prev { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(255,255,255,0.02); }
+.sdg-prev h3 { margin: 0 0 10px; font-size: 1rem; color: #c7d2fe; text-align: center; }
+.sdg-prev table { width: 100%; border-collapse: collapse; }
+.sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
+.sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 42%; }
+.sdg-hist { margin-top: 22px; }
+.sdg-hist h3 { font-size: 0.95rem; color: #c7d2fe; margin-bottom: 10px; }
+.sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-hist th { color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.03); }
+@media print { .sdg-wrap form, .sdg-doc-head, .sdg-doc-tools, .sdg-hist { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="sdg-wrap">
+  <h2>Rekod Penempahan Bilik ICT</h2>
+  <p class="sdg-hint">Tulis arahan ringkas — contoh: "Saya ingin tempah Bilik ICT 1 pada Isnin dari 10.00 pagi hingga 11.30 pagi untuk kelas Tahun 5." AI akan melengkapkan borang.</p>
+
+  <div class="card sdg-card">
+    <label class="sdg-grid">
+      <span class="full">Arahan (Bahasa Melayu / English)
+        <textarea id="instr" placeholder="Saya ingin tempah Bilik ICT 1 pada Isnin 10.00 pagi - 11.30 pagi untuk Tahun 5, tujuan akademik"></textarea>
+      </span>
+    </label>
+    <div class="sdg-actions">
+      <button type="button" class="btn" id="autoBtn">✨ Lengkapkan Automatik</button>
+      <span class="sdg-hint" id="status"></span>
+    </div>
+    <div class="sdg-conflict" id="conflictBox"></div>
+  </div>
+
+  <div class="card sdg-card" id="formCard" style="display:none">
+    <div class="sdg-grid">
+      <label>NAMA PENEMPAH<input id="f_name"></label>
+      <label>BILIK<select id="f_room">{% for r in rooms %}<option value="{{ r }}">{{ r }}</option>{% endfor %}</select></label>
+      <label>TARIKH<input id="f_date" type="date"></label>
+      <label>HARI<input id="f_day" placeholder="KHAMIS"></label>
+      <label>MASA MULA<input id="f_start" type="time"></label>
+      <label>MASA TAMAT<input id="f_end" type="time"></label>
+      <label>TUJUAN<select id="f_purpose"><option>Akademik</option><option>Kokurikulum</option><option>Pentadbiran</option><option>Mesyuarat</option></select></label>
+      <label>TEMPOH MASA PENGGUNAAN<input id="f_duration" placeholder="1 JAM"></label>
+      <label class="full">KELAS / KUMPULAN<input id="f_class" placeholder="Tahun 5"></label>
+      <label class="full">CATATAN<textarea id="f_remarks" placeholder="Catatan (boleh kosong)"></textarea></label>
+    </div>
+    <div class="sdg-actions">
+      <button type="button" class="btn" id="genBtn">Papar Borang</button>
+      <button type="button" class="btn" id="saveBtn">Simpan</button>
+      <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+      <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+    </div>
+  </div>
+
+  <div class="sdg-doc" id="doc">
+    <div class="sdg-doc-head">
+      <div class="sdg-doc-title">Pratonton</div>
+    </div>
+    <div class="sdg-prev" id="docBody"></div>
+  </div>
+
+  <div class="sdg-hist" id="hist">
+    <h3>Sejarah Tempahan</h3>
+    <table>
+      <tr><th>Tarikh</th><th>Hari</th><th>Masa</th><th>Bilik</th><th>Tujuan</th><th>Nama</th></tr>
+      {% for r in recent %}
+      <tr><td>{{ r.booking_date }}</td><td>{{ r.day }}</td><td>{{ r.start_time }}</td><td>{{ r.room }}</td><td>{{ r.purpose }}</td><td>{{ r.teacher_name }}</td></tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:var(--muted)">Tiada rekod.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var CSRF = '{{ csrf_token() }}';
+  var data = null;
+  function $(id){ return document.getElementById(id); }
+  function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
+  function collect(){
+    return { teacher_name: $('f_name').value.trim(), room: $('f_room').value,
+      booking_date: $('f_date').value, day: $('f_day').value.trim(),
+      start_time: $('f_start').value, end_time: $('f_end').value,
+      purpose: $('f_purpose').value, duration: $('f_duration').value.trim(),
+      class_info: $('f_class').value.trim(), remarks: $('f_remarks').value.trim() };
+  }
+  function fill(d){
+    data = d;
+    $('f_name').value = d.teacher_name || '';
+    $('f_room').value = d.room || 'Bilik ICT 1';
+    $('f_date').value = d.booking_date || '';
+    $('f_day').value = d.day || '';
+    $('f_start').value = d.start_time || '';
+    $('f_end').value = d.end_time || '';
+    $('f_purpose').value = d.purpose || 'Akademik';
+    $('f_duration').value = d.duration || '';
+    $('f_class').value = d.class_info || '';
+    $('f_remarks').value = d.remarks || '';
+    $('formCard').style.display = 'block';
+  }
+  function post(url, body){
+    return fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-CSRFToken':CSRF }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); });
+  }
+  $('autoBtn').onclick = function(){
+    var instr = $('instr').value.trim();
+    if(!instr){ toast('Sila tulis arahan dahulu', true); return; }
+    $('status').textContent = 'Memproses...';
+    post('/ict-booking/autofill', { instruction: instr }).then(function(res){
+      $('status').textContent = '';
+      if(res.data){ fill(res.data); }
+      if(res.conflicts && res.conflicts.length){
+        var box = $('conflictBox');
+        box.innerHTML = '⚠ Konflik: tempahan bertindih untuk ' + (res.data.room||'') + ' pada ' + (res.data.booking_date||'') + ':<br>' +
+          res.conflicts.map(function(c){ return '• ' + c.teacher_name + ' (' + c.start_time + '-' + c.end_time + ')'; }).join('<br>');
+        box.classList.add('show');
+      } else { $('conflictBox').classList.remove('show'); }
+    }).catch(function(){ $('status').textContent=''; toast('Ralat. Tiada API key? Borang boleh diisi manual.', true); });
+  };
+  $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
+  function renderPreview(){
+    data = collect();
+    var rows = [
+      ['TARIKH', data.booking_date||'—','HARI', data.day||'—'],
+      ['MASA CADANGAN PENEMPAHAN', data.start_time||'—','',''],
+      ['NAMA PENEMPAH', data.teacher_name||'—','BILIK', data.room||'—'],
+      ['TUJUAN', data.purpose||'—','TEMPOH MASA PENGGUNAAN', data.duration||'—'],
+      ['KELAS / KUMPULAN', data.class_info||'—','CATATAN', data.remarks||'—']
+    ];
+    var h = '<h3>REKOD PENEMPAHAN BILIK ICT</h3><table>';
+    rows.forEach(function(r){
+      h += '<tr><td class="lbl">'+r[0]+'</td><td>'+r[1]+'</td>';
+      h += r[2] ? '<td class="lbl">'+r[2]+'</td><td>'+r[3]+'</td>' : '<td></td><td></td>';
+      h += '</tr>';
+    });
+    h += '</table><p style="margin-top:18px;font-size:0.8rem">Tandatangan Guru Pemohon: ______________________ &nbsp;&nbsp; Disahkan oleh: ______________________</p>';
+    $('docBody').innerHTML = h;
+    $('doc').classList.add('show');
+  }
+  function dl(fmt){
+    data = collect();
+    fetch('/ict-booking/export', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ data: data, format: fmt }) })
+      .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+      .then(function(b){ var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Rekod_Penempahan_Bilik_ICT.'+(fmt==='pdf'?'pdf':'docx'); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); })
+      .catch(function(){ toast('Muat turun gagal', true); });
+  }
+  $('pdfBtn').onclick = function(){ dl('pdf'); };
+  $('docxBtn').onclick = function(){ dl('docx'); };
+  $('saveBtn').onclick = function(){
+    data = collect();
+    post('/ict-booking/save', { data: data }).then(function(res){ if(res.ok){ toast('Disimpan'); } });
+  };
+})();
+</script>
+{% endblock %}

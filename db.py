@@ -415,6 +415,84 @@ CREATE TABLE IF NOT EXISTS document_versions (
     created_by INTEGER,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS ict_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    teacher_name TEXT,
+    booking_date TEXT,
+    day TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    room TEXT,
+    purpose TEXT,
+    class_info TEXT,
+    duration TEXT,
+    remarks TEXT,
+    status TEXT DEFAULT 'draft',
+    doc_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS kokurikulum_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    programme TEXT,
+    doc_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS duty_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    duty_date TEXT,
+    doc_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS assembly_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    week TEXT,
+    doc_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ict_inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category TEXT,
+    serial_no TEXT,
+    quantity INTEGER DEFAULT 1,
+    condition TEXT DEFAULT 'Baik',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ict_loans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    teacher_name TEXT,
+    equipment_name TEXT,
+    category TEXT,
+    serial_no TEXT,
+    quantity INTEGER DEFAULT 1,
+    borrow_date TEXT,
+    borrow_time TEXT,
+    purpose TEXT,
+    expected_return TEXT,
+    actual_return TEXT,
+    condition_out TEXT,
+    condition_in TEXT,
+    status TEXT DEFAULT 'Dipinjam',
+    witness TEXT,
+    approver TEXT,
+    remarks TEXT,
+    doc_json TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 

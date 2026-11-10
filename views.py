@@ -514,6 +514,10 @@ def settings():
             set_setting("school_name", request.form.get("school_name", "").strip())
             set_setting("school_name_en", request.form.get("school_name_en", "").strip())
             set_setting("school_address", request.form.get("school_address", "").strip())
+            set_setting("school_code", request.form.get("school_code", "").strip())
+            set_setting("school_tel", request.form.get("school_tel", "").strip())
+            set_setting("school_email", request.form.get("school_email", "").strip())
+            set_setting("headteacher_name", request.form.get("headteacher_name", "").strip())
             set_setting("tagline", request.form.get("tagline", "").strip())
             set_setting("theme", request.form.get("theme", "default").strip())
             f = request.files.get("logo")
@@ -570,6 +574,10 @@ def settings():
                            school_name=get_setting("school_name") or "",
                            school_name_en=get_setting("school_name_en") or "",
                            school_address=get_setting("school_address") or "",
+                           school_code=get_setting("school_code") or "",
+                           school_tel=get_setting("school_tel") or "",
+                           school_email=get_setting("school_email") or "",
+                           headteacher_name=get_setting("headteacher_name") or "",
                            tagline=get_setting("tagline") or "",
                            theme=get_setting("theme") or "default",
                            bg_image=get_setting("bg_image") or "",
