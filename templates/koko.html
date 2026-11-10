@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Laporan Kokurikulum · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.sdg-wrap { max-width: 960px; margin: 0 auto; }
+.sdg-card { padding: 1.4rem 1.5rem; }
+.sdg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sdg-grid .full { grid-column: 1 / -1; }
+.sdg-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--muted); }
+.sdg-grid input, .sdg-grid textarea, .sdg-grid select { padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.88rem; font-family: inherit; }
+.sdg-grid input:focus, .sdg-grid textarea:focus { outline: none; border-color: var(--accent); }
+.sdg-grid textarea { resize: vertical; min-height: 58px; }
+.sdg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+.sdg-hint { font-size: 0.8rem; color: var(--muted); }
+.sdg-doc { margin-top: 20px; display: none; }
+.sdg-doc.show { display: block; }
+.sdg-doc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sdg-doc-title { font-weight: 800; font-size: 1.1rem; color: #fff; }
+.sdg-doc-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.sdg-prev { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(255,255,255,0.02); }
+.sdg-prev h3 { margin: 0 0 10px; font-size: 1rem; color: #c7d2fe; text-align: center; }
+.sdg-prev table { width: 100%; border-collapse: collapse; }
+.sdg-prev td { border: 1px solid #64748b; padding: 7px 10px; font-size: 0.85rem; vertical-align: top; }
+.sdg-prev td.lbl { font-weight: 700; background: rgba(99,102,241,0.08); width: 34%; }
+.sdg-photos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.sdg-photo { border: 1px solid var(--border); border-radius: 10px; padding: 8px; text-align: center; }
+.sdg-photo img { max-width: 100%; max-height: 150px; border-radius: 6px; object-fit: contain; }
+.sdg-photo input[type=file] { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+.sdg-photo input[type=text] { width: 100%; margin-top: 6px; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-size: 0.78rem; }
+.sdg-hist { margin-top: 22px; }
+.sdg-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.sdg-hist th, .sdg-hist td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+.sdg-hist th { color: var(--muted); background: rgba(255,255,255,0.03); }
+@media print { .sdg-wrap form, .sdg-doc-head, .sdg-doc-tools, .sdg-hist, .sdg-photo input { display: none !important; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="sdg-wrap">
+  <h2>Laporan Bergambar Unit Kokurikulum</h2>
+  <p class="sdg-hint">Contoh arahan: "Jana laporan untuk kelab bola sepak. Latihan pada Rabu di padang sekolah. Murid berlatih hantaran dan tendangan. Saya akan muat naik gambar."</p>
+
+  <div class="card sdg-card">
+    <label class="sdg-grid"><span class="full">Arahan (BM / English)<textarea id="instr"></textarea></span></label>
+    <div class="sdg-actions"><button type="button" class="btn" id="autoBtn">✨ Jana Laporan</button><span class="sdg-hint" id="status"></span></div>
+  </div>
+
+  <div class="card sdg-card" id="formCard" style="display:none">
+    <div class="sdg-grid">
+      <label class="full">PROGRAM<input id="f_program"></label>
+      <label class="full">TEMPAT<input id="f_tempat"></label>
+      <label>TARIKH PROGRAM<input id="f_tarikh" type="date"></label>
+      <label>SASARAN<input id="f_sasaran"></label>
+      <label class="full">OBJEKTIF (satu per baris)<textarea id="f_objektif"></textarea></label>
+      <label class="full">BULATAN AKTIVITI (satu per baris)<textarea id="f_aktiviti"></textarea></label>
+      <label class="full">PENILAIAN AKTIVITI<textarea id="f_penilaian"></textarea></label>
+      <label class="full">ANALISIS<textarea id="f_analisis"></textarea></label>
+      <label class="full">KEBERHASILAN PROGRAM<textarea id="f_keberhasilan"></textarea></label>
+      <label class="full">CADANGAN PENAMBAHBAIKAN<textarea id="f_cadangan"></textarea></label>
+    </div>
+    <h4 style="margin:16px 0 8px;font-size:0.85rem;color:#c7d2fe">GAMBAR (LAMPIRAN)</h4>
+    <div class="sdg-photos" id="photos"></div>
+    <h4 style="margin:16px 0 8px;font-size:0.85rem;color:#c7d2fe">TANDATANGAN</h4>
+    <div class="sdg-grid">
+      <label>Disediakan oleh (nama)<input id="f_disediakan_nama"></label>
+      <label>Jawatan<input id="f_disediakan_jawatan"></label>
+      <label>Disahkan oleh (nama)<input id="f_disahkan_nama"></label>
+      <label>Jawatan<input id="f_disahkan_jawatan"></label>
+    </div>
+    <div class="sdg-actions">
+      <button type="button" class="btn" id="genBtn">Papar</button>
+      <button type="button" class="btn" id="saveBtn">Simpan</button>
+      <button type="button" class="btn small" id="pdfBtn">⬇ PDF</button>
+      <button type="button" class="btn small" id="docxBtn">⬇ Word</button>
+    </div>
+  </div>
+
+  <div class="sdg-doc" id="doc">
+    <div class="sdg-doc-head"><div class="sdg-doc-title">Pratonton</div></div>
+    <div class="sdg-prev" id="docBody"></div>
+  </div>
+
+  <div class="sdg-hist">
+    <h3 style="font-size:0.9rem;color:#c7d2fe">Sejarah</h3>
+    <table><tr><th>Program</th><th>Tarikh</th></tr>
+      {% for r in recent %}<tr><td>{{ r.program }}</td><td>{{ r.created_at }}</td></tr>
+      {% else %}<tr><td colspan="2" style="text-align:center;color:var(--muted)">Tiada rekod.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var data = { photos: [] };
+  function $(id){ return document.getElementById(id); }
+  function toast(m, err){ var t=document.createElement('div'); t.className='ai-toast'+(err?' err':''); t.textContent=m; t.style.display='block'; document.body.appendChild(t); setTimeout(function(){t.remove();},2600); }
+  function lines(id){ return $(id).value.split('\n').map(function(x){return x.trim();}).filter(Boolean); }
+  function collect(){
+    return { program: $('f_program').value.trim(), tempat: $('f_tempat').value.trim(), tarikh: $('f_tarikh').value,
+      sasaran: $('f_sasaran').value.trim(), objektif: lines('f_objektif'), aktiviti: lines('f_aktiviti'),
+      penilaian: lines('f_penilaian'), analisis: lines('f_analisis'), keberhasilan: lines('f_keberhasilan'),
+      cadangan: lines('f_cadangan'), photos: data.photos,
+      disediakan_nama: $('f_disediakan_nama').value.trim(), disediakan_jawatan: $('f_disediakan_jawatan').value.trim(),
+      disahkan_nama: $('f_disahkan_nama').value.trim(), disahkan_jawatan: $('f_disahkan_jawatan').value.trim() };
+  }
+  function fill(d){
+    data = d; data.photos = d.photos || [];
+    $('f_program').value = d.program || ''; $('f_tempat').value = d.tempat || ''; $('f_tarikh').value = d.tarikh || '';
+    $('f_sasaran').value = d.sasaran || '';
+    $('f_objektif').value = (d.objektif||[]).join('\n'); $('f_aktiviti').value = (d.aktiviti||[]).join('\n');
+    $('f_penilaian').value = (d.penilaian||[]).join('\n'); $('f_analisis').value = (d.analisis||[]).join('\n');
+    $('f_keberhasilan').value = (d.keberhasilan||[]).join('\n'); $('f_cadangan').value = (d.cadangan||[]).join('\n');
+    renderPhotos(); $('formCard').style.display='block';
+  }
+  function renderPhotos(){
+    var box = $('photos'); box.innerHTML='';
+    for (var i=0;i<4;i++){
+      var slot = document.createElement('div'); slot.className='sdg-photo';
+      var p = (data.photos||[])[i] || {};
+      slot.innerHTML = '<img style="display:'+(p.url?'block':'none')+'" src="'+(p.url||'')+'">'+
+        '<input type="file" accept="image/*"><input type="text" placeholder="Kapsyen Gambar '+(i+1)+'" value="'+(p.caption||'').replace(/"/g,'&quot;')+'">';
+      var file = slot.querySelector('input[type=file]'), img = slot.querySelector('img'), cap = slot.querySelector('input[type=text]');
+      cap.addEventListener('input', function(){ data.photos[i]=data.photos[i]||{}; data.photos[i].caption=cap.value; });
+      file.addEventListener('change', function(){
+        var fd = new FormData(); fd.append('file', file.files[0]);
+        fetch('/kokurikulum/photo', { method:'POST', body:fd }).then(function(r){return r.json();}).then(function(j){
+          data.photos[i] = { name: j.name, path: j.url, url: j.url, caption: cap.value };
+          img.src = j.url; img.style.display='block';
+        }).catch(function(){ toast('Muat naik gagal', true); });
+      });
+      box.appendChild(slot);
+    }
+  }
+  function post(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(function(r){return r.json();}); }
+  $('autoBtn').onclick = function(){
+    var instr = $('instr').value.trim(); if(!instr){ toast('Tulis arahan dahulu', true); return; }
+    $('status').textContent='Menjana...';
+    post('/kokurikulum/autofill', { instruction: instr }).then(function(res){
+      $('status').textContent=''; if(res.data) fill(res.data);
+    }).catch(function(){ $('status').textContent=''; toast('Ralat. Tiada API key? Isi manual.', true); });
+  };
+  $('genBtn').onclick = function(){ data = collect(); renderPreview(); };
+  function renderPreview(){
+    data = collect();
+    var rows = [['PROGRAM',data.program],['TEMPAT',data.tempat],['TARIKH PROGRAM',data.tarikh],['SASARAN',data.sasaran],
+      ['OBJEKTIF', (data.objektif||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],
+      ['BULATAN AKTIVITI', (data.aktiviti||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],
+      ['PENILAIAN AKTIVITI', (data.penilaian||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],
+      ['ANALISIS', (data.analisis||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],
+      ['KEBERHASILAN PROGRAM', (data.keberhasilan||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')],
+      ['CADANGAN PENAMBAHBAIKAN', (data.cadangan||[]).map(function(x,i){return (i+1)+'. '+x;}).join('<br>')]];
+    var h = '<h3>LAPORAN BERGAMBAR UNIT KOKURIKULUM</h3><table>';
+    rows.forEach(function(r){ h += '<tr><td class="lbl">'+r[0]+'</td><td>'+(r[1]||'—')+'</td></tr>'; });
+    h += '</table><p style="margin-top:16px;font-size:0.8rem">Disediakan oleh: ____________ &nbsp;&nbsp; Disahkan oleh: ____________</p>';
+    $('docBody').innerHTML = h; $('doc').classList.add('show');
+  }
+  function dl(fmt){
+    data = collect();
+    fetch('/kokurikulum/export', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data, format: fmt }) })
+      .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+      .then(function(b){ var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Laporan_Kokurikulum.'+(fmt==='pdf'?'pdf':'docx'); document.body.appendChild(a); a.click(); a.remove(); })
+      .catch(function(){ toast('Muat turun gagal', true); });
+  }
+  $('pdfBtn').onclick=function(){dl('pdf');}; $('docxBtn').onclick=function(){dl('docx');};
+  $('saveBtn').onclick=function(){ data = collect(); post('/kokurikulum/save', { data: data }).then(function(res){ if(res.ok) toast('Disimpan'); }); };
+})();
+</script>
+{% endblock %}
