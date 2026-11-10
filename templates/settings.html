@@ -80,8 +80,12 @@
           <input type="hidden" name="action" value="user_role">
           <input type="hidden" name="user_id" value="{{ u.id }}">
           <select name="role" style="width:auto; display:inline-block">
+            <option value="super_admin" {{ 'selected' if u.role == 'super_admin' }}>{{ t('role_super_admin', lang) }}</option>
+            <option value="admin" {{ 'selected' if u.role == 'admin' }}>{{ t('role_admin', lang) }}</option>
+            <option value="dept_head" {{ 'selected' if u.role == 'dept_head' }}>{{ t('role_dept_head', lang) }}</option>
+            <option value="staff" {{ 'selected' if u.role == 'staff' }}>{{ t('role_staff', lang) }}</option>
+            <option value="student" {{ 'selected' if u.role == 'student' }}>{{ t('role_student', lang) }}</option>
             <option value="teacher" {{ 'selected' if u.role == 'teacher' }}>{{ t('teacher', lang) }}</option>
-            <option value="admin" {{ 'selected' if u.role == 'admin' }}>{{ t('admin', lang) }}</option>
           </select>
           <button class="small" type="submit">{{ t('save', lang) }}</button>
         </form>

@@ -1,39 +1,78 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>{{ t('welcome', lang) }}, {{ session.get('name') }}</h1>
-<p class="muted">{{ brand_tagline }}</p>
+<div class="dash-head">
+  <div>
+    <h1>{{ t('welcome', lang) }}, {{ session.get('name') }}</h1>
+    <p class="muted">{{ brand_tagline }}</p>
+  </div>
+  <div class="dash-head-actions">
+    <a class="btn small" href="{{ url_for('rph.index') }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width:15px;height:15px"><use href="#i-plan"/></svg> {{ t('rph_title', lang) }}</a>
+    <a class="btn small" href="{{ url_for('minit.index') }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width:15px;height:15px"><use href="#i-time"/></svg> Minit Curai</a>
+    <a class="btn small" href="{{ url_for('ai.index') }}"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width:15px;height:15px"><use href="#i-ai"/></svg> {{ t('ai_title', lang) }}</a>
+  </div>
+</div>
 
 <div class="stats">
-  <div class="stat">
-    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-class"/></svg></div>
-    <div class="stat-body"><div class="num" data-count="{{ n_classes }}">0</div><div class="label">{{ t('stat_classes', lang) }}</div></div>
+  {% if is_admin %}
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></div><div class="stat-body"><div class="num" data-count="{{ n_total_users }}">0</div><div class="label">{{ t('stat_total_users', lang) }}</div></div></div>
+  {% endif %}
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-class"/></svg></div><div class="stat-body"><div class="num" data-count="{{ n_classes }}">0</div><div class="label">{{ t('stat_classes', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></div><div class="stat-body"><div class="num" data-count="{{ n_students }}">0</div><div class="label">{{ t('stat_students', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></div><div class="stat-body"><div class="num" data-count="{{ n_docs }}">0</div><div class="label">{{ t('stat_documents', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-ai"/></svg></div><div class="stat-body"><div class="num" data-count="{{ n_ai }}">0</div><div class="label">{{ t('stat_ai_chats', lang) }}</div></div></div>
+  <div class="stat"><div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></div><div class="stat-body"><div class="num" data-count="{{ pending }}">0</div><div class="label">{{ t('stat_pending', lang) }}</div></div></div>
+</div>
+
+<div class="dash-grid">
+  <div class="panel">
+    <h2>{{ t('recent_activity', lang) }}</h2>
+    {% if recent %}
+    <ul class="activity">
+      {% for r in recent %}
+      <li>
+        <span class="dot dot-{{ r.kind }}"></span>
+        <div class="activity-body">
+          <span class="activity-text">{{ r.details or r.action }}</span>
+          <span class="activity-meta">{{ r.at }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">{{ t('no_activity', lang) }}</p>
+    {% endif %}
   </div>
-  <div class="stat">
-    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></div>
-    <div class="stat-body"><div class="num" data-count="{{ n_students }}">0</div><div class="label">{{ t('stat_students', lang) }}</div></div>
-  </div>
-  <div class="stat">
-    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></div>
-    <div class="stat-body"><div class="num" data-count="{{ n_assignments }}">0</div><div class="label">{{ t('stat_assignments', lang) }}</div></div>
-  </div>
-  <div class="stat">
-    <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg></div>
-    <div class="stat-body"><div class="num" data-count="{{ n_att }}">0</div><div class="label">{{ t('stat_attendance_today', lang) }}</div></div>
+
+  <div class="panel">
+    <h2>{{ t('notifications', lang) }} {% if n_notif %}<span class="badge">{{ n_notif }}</span>{% endif %}
+      {% if n_notif %}<form class="inline-form" method="post" action="{{ url_for('views.notifications_read') }}" style="float:right; display:inline"><button class="small" type="submit">{{ t('mark_all_read', lang) }}</button></form>{% endif %}
+    </h2>
+    {% if notifications %}
+    <ul class="activity">
+      {% for n in notifications %}
+      <li class="{{ '' if n.is_read else 'unread' }}">
+        <span class="dot dot-notif"></span>
+        <div class="activity-body">
+          <span class="activity-text">{{ n.message }}</span>
+          <span class="activity-meta">{{ n.created_at }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">{{ t('no_notifications', lang) }}</p>
+    {% endif %}
   </div>
 </div>
 
 <h2>{{ t('quick_actions', lang) }}</h2>
 <div class="cards">
-  <a class="card" href="{{ url_for('attendance.index') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-staff"/></svg></span>
-    <span><strong>{{ t('nav_attendance', lang) }}</strong><span>GPS check-in and live attendance dashboard.</span></span>
-  </a>
-  {% if session.get('role') == 'admin' %}
-  <a class="card" href="{{ url_for('attendance.settings') }}">
-    <span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-settings"/></svg></span>
-    <span><strong>{{ t('att_settings', lang) }}</strong><span>Configure school location, geofence and times.</span></span>
-  </a>
-  {% endif %}
+  <a class="card" href="{{ url_for('attendance.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-staff"/></svg></span><span><strong>{{ t('nav_attendance', lang) }}</strong><span>GPS check-in and live attendance dashboard.</span></span></a>
+  <a class="card" href="{{ url_for('documents.documents') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></span><span><strong>{{ t('nav_documents', lang) }}</strong><span>Upload, edit and sign documents.</span></span></a>
+  <a class="card" href="{{ url_for('ai.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-ai"/></svg></span><span><strong>{{ t('ai_title', lang) }}</strong><span>Ask the AI teaching assistant anything.</span></span></a>
+  <a class="card" href="{{ url_for('rph.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plan"/></svg></span><span><strong>{{ t('rph_title', lang) }}</strong><span>Generate full RPH documents.</span></span></a>
+  <a class="card" href="{{ url_for('minit.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-time"/></svg></span><span><strong>Minit Curai</strong><span>KPM-style meeting minutes.</span></span></a>
+  <a class="card" href="{{ url_for('analytics.index') }}"><span class="card-ico"><svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-analytics"/></svg></span><span><strong>{{ t('nav_analytics', lang) }}</strong><span>Charts and reports.</span></span></a>
 </div>
 {% endblock %}
 

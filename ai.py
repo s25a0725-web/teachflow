@@ -20,6 +20,7 @@ from werkzeug.utils import secure_filename
 
 from db import get_db, get_setting, set_setting
 from i18n import t
+import userstore
 from persona import SYSTEM_PROMPT
 from ai_provider import stream_chat, complete, configured, model
 from file_assistant import pdf_to_text, docx_to_text, text_to_pdf_bytes
@@ -46,7 +47,7 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if session.get("role") != "admin":
+        if not userstore.is_admin_role(session.get("role")):
             flash("admin_only", "error")
             return redirect(url_for("views.dashboard"))
         return f(*args, **kwargs)

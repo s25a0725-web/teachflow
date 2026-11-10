@@ -49,7 +49,7 @@ def _name(uid):
 
 
 def _is_admin():
-    return session.get("role") == "admin"
+    return userstore.is_admin_role(session.get("role"))
 
 
 def admin_required(f):

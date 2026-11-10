@@ -33,6 +33,22 @@ USERS_FILE = os.environ.get("TEACHFLOW_USERS", str(Path(__file__).resolve().pare
 
 _lock = threading.Lock()
 
+# Role hierarchy (high -> low). "teacher" is the legacy alias for "staff".
+ROLES = ("super_admin", "admin", "dept_head", "staff", "student", "teacher")
+
+_ROLE_LEVEL = {
+    "super_admin": 5, "admin": 4, "dept_head": 3, "staff": 2, "student": 1, "teacher": 2,
+}
+
+
+def role_level(role):
+    return _ROLE_LEVEL.get(role, 0)
+
+
+def is_admin_role(role):
+    """True for roles with full administrative privileges (super_admin, admin)."""
+    return role_level(role) >= 4
+
 
 def _now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -113,7 +129,7 @@ def add(email, password, name, role="teacher", security_question=None, security_
             "email": email,
             "password_hash": generate_password_hash(password),
             "name": (name or "").strip(),
-            "role": role if role in ("admin", "teacher") else "teacher",
+            "role": role if role in ROLES else "teacher",
             "security_question": security_question or None,
             "security_answer_hash": generate_password_hash(security_answer)
                 if security_answer else None,
@@ -136,7 +152,7 @@ def update_password(uid, password):
 
 
 def update_role(uid, role):
-    if role not in ("admin", "teacher"):
+    if role not in ROLES:
         return False
     with _lock:
         users = _load()

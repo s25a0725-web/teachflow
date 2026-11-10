@@ -101,6 +101,7 @@ def welcome():
 @login_required
 def dashboard():
     uid = session["user_id"]
+    is_admin = userstore.is_admin_role(session.get("role"))
     db = get_db()
     n_classes = db.execute("SELECT COUNT(*) c FROM classes WHERE teacher_id=?", (uid,)).fetchone()["c"]
     n_students = db.execute(
@@ -111,9 +112,57 @@ def dashboard():
     n_att = db.execute(
         "SELECT COUNT(*) c FROM attendance a JOIN classes cl ON cl.id=a.class_id "
         "WHERE cl.teacher_id=? AND a.date=?", (uid, today)).fetchone()["c"]
+    n_docs = db.execute("SELECT COUNT(*) c FROM documents WHERE teacher_id=?", (uid,)).fetchone()["c"]
+    n_ai = db.execute("SELECT COUNT(*) c FROM ai_conversations WHERE teacher_id=?", (uid,)).fetchone()["c"]
+    n_total_users = db.execute("SELECT COUNT(*) c FROM users").fetchone()["c"] if is_admin else 0
+    # Pending signature approvals awaiting this teacher
+    pending = db.execute(
+        "SELECT COUNT(*) c FROM sign_requests s "
+        "WHERE s.status = 'pending' AND s.document_id IN (SELECT id FROM documents WHERE teacher_id=?)",
+        (uid,),
+    ).fetchone()["c"] if True else 0
+    # Recent activity (audit + documents + AI)
+    recent = []
+    for row in db.execute(
+        "SELECT action, details, created_at FROM audit_logs WHERE user_id=? ORDER BY id DESC LIMIT 6", (uid,)
+    ).fetchall():
+        recent.append({"kind": "audit", "action": row["action"], "details": row["details"],
+                       "at": row["created_at"]})
+    for row in db.execute(
+        "SELECT title, created_at FROM documents WHERE teacher_id=? ORDER BY id DESC LIMIT 4", (uid,)
+    ).fetchall():
+        recent.append({"kind": "doc", "action": "doc_uploaded", "details": row["title"],
+                       "at": row["created_at"]})
+    for row in db.execute(
+        "SELECT title, updated_at FROM ai_conversations WHERE teacher_id=? ORDER BY id DESC LIMIT 4", (uid,)
+    ).fetchall():
+        recent.append({"kind": "ai", "action": "ai_chat", "details": row["title"],
+                       "at": row["updated_at"]})
+    recent.sort(key=lambda r: r["at"] or "", reverse=True)
+    recent = recent[:8]
+    # Notifications (unread count + latest)
+    n_notif = db.execute(
+        "SELECT COUNT(*) c FROM notifications WHERE user_id=? AND is_read=0", (uid,)
+    ).fetchone()["c"]
+    notifications = db.execute(
+        "SELECT id, message, kind, is_read, created_at FROM notifications WHERE user_id=? ORDER BY id DESC LIMIT 8",
+        (uid,),
+    ).fetchall()
     db.close()
     return render_template("dashboard.html", n_classes=n_classes, n_students=n_students,
-                           n_assignments=n_assignments, n_att=n_att)
+                           n_assignments=n_assignments, n_att=n_att, n_docs=n_docs, n_ai=n_ai,
+                           n_total_users=n_total_users, pending=pending, recent=recent,
+                           n_notif=n_notif, notifications=notifications, is_admin=is_admin)
+
+
+@bp.route("/notifications/read", methods=["POST"])
+@login_required
+def notifications_read():
+    db = get_db()
+    db.execute("UPDATE notifications SET is_read = 1 WHERE user_id = ?", (session["user_id"],))
+    db.commit()
+    db.close()
+    return redirect(url_for("views.dashboard"))
 
 
 # --------------------------------------------------------------------------
@@ -294,7 +343,7 @@ def attendance():
 @login_required
 def teacher_attendance():
     uid = session["user_id"]
-    is_admin = session.get("role") == "admin"
+    is_admin = userstore.is_admin_role(session.get("role"))
     att_date = request.form.get("date") if request.method == "POST" else (request.args.get("date") or date.today().isoformat())
     db = get_db()
     if is_admin:
@@ -504,7 +553,7 @@ def settings():
         elif action == "user_role":
             target = int(request.form.get("user_id"))
             role = request.form.get("role")
-            if target != session["user_id"] and role in ("admin", "teacher"):
+            if target != session["user_id"] and role in userstore.ROLES:
                 userstore.update_role(target, role)
                 flash("settings_saved", "success")
         elif action == "user_reset_password":

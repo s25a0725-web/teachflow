@@ -339,6 +339,25 @@ p { margin: 0.5rem 0; }
 .stat .num { font-size: 1.9rem; font-weight: 800; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
 .stat .label { color: var(--muted); font-size: 0.86rem; }
 
+/* Dashboard head + two-column layout + activity feed */
+.dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.dash-head h1 { margin-bottom: 0.15rem; }
+.dash-head-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.dash-head-actions .btn { display: inline-flex; align-items: center; gap: 0.4rem; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.1rem; margin: 1.25rem 0; }
+.activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.activity li { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.45rem 0.5rem; border-radius: 9px; }
+.activity li.unread { background: rgba(99, 102, 241, 0.1); }
+.activity .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 0.35rem; }
+.dot-audit { background: #fbbf24; }
+.dot-doc { background: #34d399; }
+.dot-ai { background: #818cf8; }
+.dot-notif { background: #38bdf8; }
+.activity-body { display: flex; flex-direction: column; min-width: 0; }
+.activity-text { font-size: 0.88rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-meta { font-size: 0.72rem; color: var(--muted); }
+.badge { display: inline-block; background: var(--accent); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
 .card {
   display: flex; align-items: flex-start; gap: 0.75rem;
