@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% block head %}{% endblock %}
 </head>
-<body class="theme-{{ theme }}{% if bg_image %} has-bg{% endif %}{% if session.get('user_id') or session.get('parent_id') %} has-sidebar{% endif %}"{% if bg_image %} style="--bg-image: url('{{ url_for('views.branding_background') }}')"{% endif %}>
+<body class="theme-{{ theme }}{% if bg_image %} has-bg{% endif %}{% if session.get('user_id') or session.get('parent_id') %} has-sidebar{% endif %}" data-page="{% if request.endpoint and request.endpoint.startswith('auth.') %}login{% elif request.endpoint and request.endpoint.startswith('ai.') %}ai{% elif request.endpoint and (request.endpoint.startswith('rph.') or request.endpoint.startswith('minit.') or request.endpoint.startswith('studio.') or request.endpoint.startswith('study.')) %}docs{% elif request.endpoint and request.endpoint.startswith('analytics.') %}analytics{% elif request.endpoint and request.endpoint.startswith('views.settings') %}settings{% else %}dashboard{% endif %}"{% if bg_image %} style="--bg-image: url('{{ url_for('views.branding_background') }}')"{% endif %}>
 
 <!-- Icon sprite (offline, inline SVG) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -57,6 +57,7 @@
 <svg class="wave-line" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0,100 C240,20 480,180 720,100 C960,20 1200,180 1440,100"/></svg>
 <div class="bg-floor" aria-hidden="true"></div>
 <canvas id="fx" aria-hidden="true"></canvas>
+<div id="neural" aria-hidden="true"></div>
 
 {% if session.get('user_id') %}
 <aside class="sidebar" id="sidebar">
@@ -255,5 +256,7 @@
   loop();
 })();
 </script>
+<script src="{{ url_for('static', filename='three.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='neural.js') }}" defer></script>
 </body>
 </html>

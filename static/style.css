@@ -14,6 +14,17 @@
   --bg-1: #0b1226;
   --bg-2: #101a36;
 
+  /* Premium multicolour palette (neural network) */
+  --nn-midnight: #10172E;
+  --nn-royal:    #7952B8;
+  --nn-sapphire: #4269A8;
+  --nn-emerald:  #347D70;
+  --nn-gold:     #C5A46D;
+  --nn-teal:     #286C78;
+  --nn-rose:     #B87891;
+  --nn-lavender: #A99ACB;
+  --nn-platinum: #B8C2D1;
+
   --surface: rgba(255, 255, 255, 0.05);
   --surface-2: rgba(255, 255, 255, 0.08);
   --surface-solid: #0e1630;
@@ -870,7 +881,7 @@ body::after {
    Print
    ========================================================================== */
 @media print {
-  .sidebar, .topbar, .bg-grid, .glow, .wave, .wave-line, #fx, .chat-toggle, .chat-panel, .sidebar-overlay,
+  .sidebar, .topbar, .bg-grid, .glow, .wave, .wave-line, #fx, #neural, .chat-toggle, .chat-panel, .sidebar-overlay,
   button, .btn, .no-print { display: none !important; }
   body { background: #fff !important; color: #000; }
   .main { margin: 0 !important; max-width: 100%; padding: 0; }
@@ -934,6 +945,20 @@ body::after {
 
 /* Particle canvas */
 #fx { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+
+/* 3D neural network (Three.js) — sits above the static background, below content */
+#neural {
+  position: fixed; inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+}
+#neural canvas { display: block; }
+
+/* Reduced motion: keep a single static frame (JS renders once) and calm CSS */
+@media (prefers-reduced-motion: reduce) {
+  .bg-grid, .wave, .wave-line, .glow { animation: none !important; }
+}
 
 /* Hamburger always available (desktop collapse toggle) */
 .hamburger { display: flex; }
