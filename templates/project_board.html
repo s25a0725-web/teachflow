@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('workflow.projects') }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ proj.name }}</h1>
+<p class="muted">{{ proj.description or '' }}</p>
+
+<div class="panel">
+  <h2>{{ t('wf_new_task', lang) }}</h2>
+  <form method="post" action="{{ url_for('workflow.task_new', pid=proj.id) }}">
+    <label>{{ t('wf_title', lang) }}<input name="title" required></label>
+    <label>{{ t('wf_description', lang) }}<input name="description"></label>
+    <label>{{ t('wf_priority', lang) }}
+      <select name="priority">{% for p in priorities %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
+    </label>
+    <label>{{ t('wf_due', lang) }}<input type="date" name="due_date"></label>
+    <label>{{ t('wf_assignee', lang) }}
+      <select name="assignee_id"><option value="">—</option>{% for u in users %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}</select>
+    </label>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<div class="kanban">
+  {% for status in ['todo', 'in_progress', 'done'] %}
+  <div class="kanban-col">
+    <h3 class="kanban-head">{{ status }}</h3>
+    {% for t in by_status[status] %}
+    <div class="kanban-card" data-id="{{ t.id }}">
+      <div class="kanban-title">{{ t.title }}</div>
+      {% if t.description %}<div class="kanban-desc">{{ t.description }}</div>{% endif %}
+      <div class="kanban-meta">
+        <span class="prio prio-{{ t.priority }}">{{ t.priority }}</span>
+        {% if t.due_date %}<span>{{ t.due_date }}</span>{% endif %}
+      </div>
+      <div class="kanban-actions">
+        {% if status != 'todo' %}<button class="small" data-move="todo">&larr;</button>{% endif %}
+        {% if status != 'done' %}<button class="small" data-move="{{ 'done' if status == 'in_progress' else 'in_progress' }}">&rarr;</button>{% endif %}
+        <form class="inline-form" method="post" action="{{ url_for('workflow.task_delete', tid=t.id) }}"><button class="small" type="submit">✕</button></form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  document.querySelectorAll('.kanban-card button[data-move]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var card = btn.closest('.kanban-card');
+      var id = card.getAttribute('data-id');
+      var status = btn.getAttribute('data-move');
+      fetch('/tasks/' + id + '/move', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'status=' + status })
+        .then(function () { location.reload(); });
+    });
+  });
+})();
+</script>
+{% endblock %}

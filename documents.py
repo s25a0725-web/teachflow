@@ -287,6 +287,15 @@ def document_edit(did):
     text = extract_text(doc)
     if request.method == "POST":
         new_text = request.form.get("text", "")
+        # Save a version snapshot before overwriting (version control)
+        last = db.execute(
+            "SELECT MAX(version) v FROM document_versions WHERE document_id = ?", (did,)
+        ).fetchone()
+        nv = (last["v"] or 0) + 1
+        db.execute(
+            "INSERT INTO document_versions (document_id, version, content, created_by) VALUES (?,?,?,?)",
+            (did, nv, new_text, uid),
+        )
         base = Path(doc["stored_name"]).stem or "document"
         new_name = f"{base}_edited_{uuid4().hex[:6]}.txt"
         _user_dir(uid).joinpath(new_name).write_text(new_text, encoding="utf-8")
@@ -299,8 +308,45 @@ def document_edit(did):
         db.close()
         flash("doc_uploaded", "success")
         return redirect(url_for("documents.documents"))
+    versions = db.execute(
+        "SELECT * FROM document_versions WHERE document_id = ? ORDER BY version DESC", (did,)
+    ).fetchall()
     db.close()
-    return render_template("document_edit.html", doc=doc, text=text)
+    return render_template("document_edit.html", doc=doc, text=text, versions=versions)
+
+
+@bp.route("/documents/<int:did>/versions")
+@login_required
+def document_versions(did):
+    uid = session["user_id"]
+    db = get_db()
+    doc = db.execute("SELECT * FROM documents WHERE id = ? AND teacher_id = ?", (did, uid)).fetchone()
+    if doc is None:
+        db.close()
+        return redirect(url_for("documents.documents"))
+    versions = db.execute(
+        "SELECT * FROM document_versions WHERE document_id = ? ORDER BY version DESC", (did,)
+    ).fetchall()
+    db.close()
+    return render_template("document_versions.html", doc=doc, versions=versions)
+
+
+@bp.route("/documents/<int:did>/versions/<int:vid>")
+@login_required
+def document_version_view(did, vid):
+    uid = session["user_id"]
+    db = get_db()
+    doc = db.execute("SELECT * FROM documents WHERE id = ? AND teacher_id = ?", (did, uid)).fetchone()
+    if doc is None:
+        db.close()
+        return redirect(url_for("documents.documents"))
+    v = db.execute(
+        "SELECT * FROM document_versions WHERE id = ? AND document_id = ?", (vid, did)
+    ).fetchone()
+    db.close()
+    if v is None:
+        return redirect(url_for("documents.document_versions", did=did))
+    return render_template("document_version_view.html", doc=doc, v=v)
 
 
 # --------------------------------------------------------------------------

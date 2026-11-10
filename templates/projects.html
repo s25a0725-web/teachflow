@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wf-head">
+  <div><h1>{{ t('wf_projects', lang) }}</h1><p class="muted">{{ t('wf_projects_hint', lang) }}</p></div>
+  <button class="btn" type="button" onclick="document.getElementById('newProject').style.display='block'">+ {{ t('wf_new_project', lang) }}</button>
+</div>
+
+<div id="newProject" style="display:none" class="panel">
+  <h2>{{ t('wf_new_project', lang) }}</h2>
+  <form method="post" action="{{ url_for('workflow.project_new') }}">
+    <label>{{ t('wf_name', lang) }}<input name="name" required></label>
+    <label>{{ t('wf_description', lang) }}<textarea name="description" rows="3"></textarea></label>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<div class="cards">
+  {% for p in projects %}
+  <a class="card" href="{{ url_for('workflow.project_board', pid=p.id) }}">
+    <span><strong>{{ p.name }}</strong><span>{{ p.n_done }}/{{ p.n_tasks }} {{ t('wf_tasks', lang) }}</span></span>
+  </a>
+  {% else %}
+  <p class="muted">{{ t('no_activity', lang) }}</p>
+  {% endfor %}
+</div>
+{% endblock %}

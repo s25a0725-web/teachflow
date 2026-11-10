@@ -358,6 +358,29 @@ p { margin: 0.5rem 0; }
 .activity-meta { font-size: 0.72rem; color: var(--muted); }
 .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
 
+/* Workflow: approvals status badges, Kanban board, calendar */
+.wf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.status { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+.status-draft { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+.status-submitted { background: rgba(59,130,246,0.18); color: #93c5fd; }
+.status-under_review { background: rgba(245,158,11,0.18); color: #fbbf24; }
+.status-approved { background: rgba(52,211,153,0.18); color: #34d399; }
+.status-rejected { background: rgba(251,113,133,0.18); color: #fb7185; }
+.status-revision_required { background: rgba(244,114,182,0.18); color: #f472b6; }
+.kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+.kanban-col { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem; min-height: 200px; }
+.kanban-head { margin: 0 0 0.7rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.kanban-card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; margin-bottom: 0.6rem; }
+.kanban-title { font-weight: 700; font-size: 0.9rem; color: #fff; }
+.kanban-desc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.kanban-meta { display: flex; gap: 0.5rem; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
+.prio { padding: 1px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+.prio-high { background: rgba(251,113,133,0.2); color: #fb7185; }
+.prio-medium { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.prio-low { background: rgba(52,211,153,0.2); color: #34d399; }
+.kanban-actions { display: flex; gap: 0.4rem; margin-top: 8px; }
+@media (max-width: 860px) { .kanban { grid-template-columns: 1fr; } }
+
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
 .card {
   display: flex; align-items: flex-start; gap: 0.75rem;

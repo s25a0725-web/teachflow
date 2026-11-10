@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('documents.document_versions', did=doc.id) }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ doc.title }} — v{{ v.version }}</h1>
+<p class="muted">{{ v.created_at }}</p>
+<div class="panel">
+  <pre style="white-space:pre-wrap; word-wrap:break-word; font-family:inherit;">{{ v.content }}</pre>
+</div>
+{% endblock %}

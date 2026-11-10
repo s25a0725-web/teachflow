@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wf-head">
+  <div><h1>{{ t('wf_approvals', lang) }}</h1><p class="muted">{{ t('wf_approvals_hint', lang) }}</p></div>
+  <button class="btn" type="button" onclick="document.getElementById('newApproval').style.display='block'">+ {{ t('wf_new_approval', lang) }}</button>
+</div>
+
+<div id="newApproval" style="display:none" class="panel">
+  <h2>{{ t('wf_new_approval', lang) }}</h2>
+  <form method="post" action="{{ url_for('workflow.approval_new') }}">
+    <label>{{ t('wf_title', lang) }}<input name="title" required></label>
+    <label>{{ t('wf_doc_type', lang) }}<input name="doc_type" placeholder="cth: Surat Rasmi"></label>
+    <label>{{ t('wf_content', lang) }}<textarea name="content" rows="4"></textarea></label>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+
+<table>
+  <tr><th>{{ t('wf_title', lang) }}</th><th>{{ t('wf_doc_type', lang) }}</th><th>{{ t('wf_status', lang) }}</th><th>{{ t('actions', lang) }}</th></tr>
+  {% for a in approvals %}
+  <tr>
+    <td><a href="{{ url_for('workflow.approval_detail', aid=a.id) }}">{{ a.title }}</a></td>
+    <td>{{ a.doc_type or '—' }}</td>
+    <td><span class="status status-{{ a.status }}">{{ a.status }}</span></td>
+    <td>
+      {% if a.status == 'draft' and (is_admin or a.teacher_id == session.get('user_id')) %}
+      <form class="inline-form" method="post" action="{{ url_for('workflow.approval_set_status', aid=a.id) }}">
+        <input type="hidden" name="status" value="submitted">
+        <button class="small" type="submit">{{ t('wf_submit', lang) }}</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" class="muted">{{ t('no_activity', lang) }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

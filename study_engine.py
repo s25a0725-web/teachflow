@@ -102,6 +102,63 @@ def extract_pages(path, kind):
 
 
 # --------------------------------------------------------------------------
+# Embeddings (offline hashing vectorizer + cosine retrieval). No external
+# embedding API is required: each chunk is encoded into a fixed-size sparse
+# vector and stored in SQLite, giving a real vector-space search on top of BM25.
+# --------------------------------------------------------------------------
+_HASH_DIM = 512
+_WORD_RE = re.compile(r"[a-zA-Z0-9\u0B80-\u0BFF]+")
+
+
+def _hash_word(w):
+    h = 0
+    for ch in w:
+        h = (h * 31 + ord(ch)) & 0xFFFFFFFF
+    return h % _HASH_DIM
+
+
+def embed_text(text):
+    """Return a JSON string of {index: weight} for cosine retrieval."""
+    vec = {}
+    words = [w.lower() for w in _WORD_RE.findall(text or "") if len(w) > 2 and w not in STOP]
+    if not words:
+        return "{}"
+    for w in words:
+        i = _hash_word(w)
+        vec[i] = vec.get(i, 0) + 1.0
+    # L2-normalize
+    norm = math.sqrt(sum(v * v for v in vec.values())) or 1.0
+    return json.dumps({str(k): v / norm for k, v in vec.items()})
+
+
+def _dot(a, b):
+    s = 0.0
+    for k, v in a.items():
+        s += v * b.get(k, 0.0)
+    return s
+
+
+def retrieve_embedded(chunks, query, top_k=5):
+    """Cosine-similarity retrieval over stored chunk embeddings.
+
+    `chunks` is a list of dicts with optional "vec" (JSON string). Falls back
+    to BM25 for any chunk without a stored vector.
+    """
+    qv = json.loads(embed_text(query))
+    scored = []
+    for c in chunks:
+        score = 0.0
+        if c.get("vec"):
+            try:
+                score = _dot(qv, json.loads(c["vec"]))
+            except Exception:
+                score = 0.0
+        scored.append((score, c))
+    scored.sort(key=lambda x: -x[0])
+    return [c for s, c in scored if s > 0][:top_k] or retrieve(chunks, query, top_k)
+
+
+# --------------------------------------------------------------------------
 # Retrieval: BM25 over the notebook's chunk collection
 # --------------------------------------------------------------------------
 def _bm25(query_tokens, doc_tokens, idf, avgdl, k1=1.5, b=0.75):

@@ -216,7 +216,8 @@ CREATE TABLE IF NOT EXISTS chunks (
     teacher_id INTEGER NOT NULL,
     idx INTEGER NOT NULL,
     page INTEGER DEFAULT 1,
-    text TEXT NOT NULL
+    text TEXT NOT NULL,
+    vec TEXT
 );
 
 CREATE TABLE IF NOT EXISTS study_items (
@@ -351,6 +352,69 @@ CREATE TABLE IF NOT EXISTS minit_documents (
     minit_json TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS approvals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    doc_type TEXT,
+    content TEXT,
+    status TEXT DEFAULT 'draft',
+    reviewer_id INTEGER,
+    reviewer_note TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS approval_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    approval_id INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    note TEXT,
+    actor_id INTEGER,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'todo',
+    priority TEXT DEFAULT 'medium',
+    assignee_id INTEGER,
+    due_date TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    event_type TEXT,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    description TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS document_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    content TEXT,
+    created_by INTEGER,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 
@@ -417,6 +481,9 @@ def init_db():
     aim_cols = {r[1] for r in conn.execute("PRAGMA table_info(ai_messages)").fetchall()}
     if "feedback" not in aim_cols:
         conn.execute("ALTER TABLE ai_messages ADD COLUMN feedback TEXT")
+    chk_cols = {r[1] for r in conn.execute("PRAGMA table_info(chunks)").fetchall()}
+    if "vec" not in chk_cols:
+        conn.execute("ALTER TABLE chunks ADD COLUMN vec TEXT")
     conn.commit()
     conn.close()
 

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('documents.documents') }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ doc.title }}</h1>
+<p class="muted">{{ t('wf_history', lang) }}</p>
+
+<table>
+  <tr><th>#</th><th>{{ t('date', lang) }}</th><th>{{ t('actions', lang) }}</th></tr>
+  {% for v in versions %}
+  <tr>
+    <td>v{{ v.version }}</td>
+    <td>{{ v.created_at }}</td>
+    <td><a class="btn small" href="{{ url_for('documents.document_version_view', did=doc.id, vid=v.id) }}">{{ t('ai_preview', lang) if 'ai_preview' else 'View' }}</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="3" class="muted">{{ t('no_activity', lang) }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

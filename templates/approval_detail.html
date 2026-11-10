@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('workflow.approvals') }}">&larr; {{ t('back', lang) }}</a>
+<h1>{{ a.title }}</h1>
+<p class="muted">{{ a.doc_type or '—' }} · <span class="status status-{{ a.status }}">{{ a.status }}</span></p>
+
+<div class="panel">
+  <h2>{{ t('wf_content', lang) }}</h2>
+  <p>{{ a.content or '—' }}</p>
+</div>
+
+{% if is_admin %}
+<div class="panel">
+  <h2>{{ t('wf_action', lang) }}</h2>
+  <form method="post" action="{{ url_for('workflow.approval_set_status', aid=a.id) }}">
+    <label>{{ t('wf_status', lang) }}
+      <select name="status">
+        {% for s in ['under_review', 'approved', 'rejected', 'revision_required'] %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ t('wf_note', lang) }}<textarea name="note" rows="3"></textarea></label>
+    <button type="submit">{{ t('save', lang) }}</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>{{ t('wf_history', lang) }}</h2>
+  <ul class="activity">
+    {% for h in history %}
+    <li><span class="dot dot-notif"></span><div class="activity-body"><span class="activity-text"><b>{{ h.status }}</b>{% if h.note %} — {{ h.note }}{% endif %}</span><span class="activity-meta">{{ h.actor_name or '' }} · {{ h.created_at }}</span></div></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

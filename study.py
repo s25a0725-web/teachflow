@@ -14,7 +14,8 @@ from werkzeug.utils import secure_filename
 from db import get_db
 from views import login_required
 from docbuild import build_docx, build_pdf
-from study_engine import (extract_pages, chunk_text, retrieve, answer, make_quiz, make_flashcards,
+from study_engine import (extract_pages, chunk_text, retrieve, retrieve_embedded, answer,
+                          make_quiz, make_flashcards, embed_text,
                           make_mindmap, make_booklet_content, summarize, key_terms,
                           ai_answer, ai_generate)
 
@@ -46,10 +47,10 @@ def _out_dir(uid):
 def _notebook_chunks(uid, notebook_id):
     db = get_db()
     rows = db.execute(
-        "SELECT c.text, c.page, s.name FROM chunks c JOIN sources s ON s.id=c.source_id "
+        "SELECT c.text, c.page, c.vec, s.name FROM chunks c JOIN sources s ON s.id=c.source_id "
         "WHERE c.teacher_id=? AND s.notebook_id=?", (uid, notebook_id)).fetchall()
     db.close()
-    return [{"text": r["text"], "source": r["name"], "page": r["page"]} for r in rows]
+    return [{"text": r["text"], "source": r["name"], "page": r["page"], "vec": r["vec"]} for r in rows]
 
 
 # --------------------------------------------------------------------------
@@ -173,8 +174,8 @@ def add_source(nbid):
         (nbid, uid, name, stored, kind, max(1, len(pages)))).lastrowid
     for (page, text) in pages:
         for i, ch in enumerate(chunk_text(text)):
-            db.execute("INSERT INTO chunks (source_id, teacher_id, idx, page, text) VALUES (?,?,?,?,?)",
-                       (sid, uid, i, page, ch))
+            db.execute("INSERT INTO chunks (source_id, teacher_id, idx, page, text, vec) VALUES (?,?,?,?,?,?)",
+                       (sid, uid, i, page, ch, embed_text(ch)))
     db.commit()
     db.close()
     return redirect(url_for("study.index"))
@@ -213,7 +214,11 @@ def chat():
     if not nbid or not question:
         return jsonify({"error": "missing"})
     chunks = _notebook_chunks(uid, nbid)
-    res = answer(chunks, question, top_k=6, max_sents=3)
+    # Vector-space (embedding) retrieval first, then extractive answer on hits.
+    top = retrieve_embedded(chunks, question, top_k=6)
+    res = answer(top, question, top_k=6, max_sents=3)
+    if not res["found"]:
+        res = answer(chunks, question, top_k=6, max_sents=3)
     if not res["found"]:
         return jsonify({"answer": "", "note": "empty",
                         "citations": [], "msg": "no_match"})
