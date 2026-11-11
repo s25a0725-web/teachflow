@@ -506,6 +506,24 @@ CREATE TABLE IF NOT EXISTS sdg_signatures (
     sign_type TEXT DEFAULT 'draw',
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS study_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    focus_minutes INTEGER DEFAULT 25,
+    completed INTEGER DEFAULT 0,
+    started_at TEXT DEFAULT (datetime('now')),
+    ended_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS studyspace_tracks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    title TEXT,
+    artist TEXT,
+    filename TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
 
 

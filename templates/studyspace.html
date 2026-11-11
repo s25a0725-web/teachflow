@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Study Space · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.ss-wrap { max-width: 1080px; margin: 0 auto; }
+.ss-hero { text-align: center; padding: 18px 0 6px; }
+.ss-hero h2 { margin: 0; font-size: 1.4rem; }
+.ss-hero p { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; }
+.ss-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-top: 16px; }
+.ss-card { padding: 1.3rem 1.4rem; }
+.ss-card h3 { margin: 0 0 12px; font-size: 0.95rem; color: #c7d2fe; display: flex; align-items: center; gap: 8px; }
+/* Pomodoro */
+.pomo-display { text-align: center; font-size: 4rem; font-weight: 800; letter-spacing: 2px; color: #fff; font-variant-numeric: tabular-nums; margin: 6px 0 12px; }
+.pomo-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+.pomo-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.pomo-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 9px; cursor: pointer; font-size: 0.85rem; }
+.pomo-btn:hover { border-color: var(--accent); color: #fff; }
+.pomo-btn.primary { background: linear-gradient(135deg,#873BFF,#167BFF); border: none; color: #fff; font-weight: 600; }
+.pomo-modes { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+.pomo-mode { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 0.78rem; }
+.pomo-mode.active { background: rgba(135,59,255,0.2); border-color: #873BFF; color: #fff; }
+.sess-count { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 8px; }
+/* Stats */
+.ss-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+.ss-stat { text-align: center; padding: 12px 6px; border: 1px solid var(--border); border-radius: 10px; }
+.ss-stat .num { font-size: 1.5rem; font-weight: 800; color: #fff; }
+.ss-stat .lbl { font-size: 0.7rem; color: var(--muted); }
+/* Ambient + music */
+.ss-ambient { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.ss-amb { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); padding: 8px 12px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; }
+.ss-amb.on { border-color: #FF8A24; color: #FF8A24; background: rgba(255,138,36,0.1); }
+.ss-amb:hover { color: #fff; }
+.track { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; margin-bottom: 6px; font-size: 0.82rem; }
+.track .tname { color: #fff; }
+.track .tartist { color: var(--muted); font-size: 0.72rem; }
+.track .play { background: none; border: none; color: #167BFF; cursor: pointer; font-size: 1rem; }
+.upload-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.upload-row input[type=file] { font-size: 0.75rem; color: var(--muted); flex: 1; }
+/* AI assistant */
+.ss-ai { display: flex; flex-direction: column; gap: 8px; }
+.ss-ai textarea { width: 100%; min-height: 70px; resize: vertical; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text); font-family: inherit; font-size: 0.88rem; }
+.ss-ai-answer { border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.5; max-height: 260px; overflow-y: auto; white-space: pre-wrap; display: none; }
+/* Focus mode */
+body.ss-focus .sidebar, body.ss-focus .topbar, body.ss-focus .dash-head, body.ss-focus .sdg-hist { display: none !important; }
+body.ss-focus main { margin-left: 0 !important; padding: 14px !important; }
+@media (max-width: 760px) { .ss-grid { grid-template-columns: 1fr; } .ss-stats { grid-template-columns: 2fr 2fr; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="ss-wrap">
+  <div class="ss-hero">
+    <h2>TEACHFLOW STUDY SPACE</h2>
+    <p>Fokus. Muzik. Produktiviti.</p>
+  </div>
+
+  <div class="ss-stats">
+    <div class="ss-stat"><div class="num">{{ stats.total_minutes }}</div><div class="lbl">Jumlah Minit</div></div>
+    <div class="ss-stat"><div class="num">{{ stats.today_minutes }}</div><div class="lbl">Hari Ini</div></div>
+    <div class="ss-stat"><div class="num">{{ stats.week_minutes }}</div><div class="lbl">Minggu Ini</div></div>
+    <div class="ss-stat"><div class="num">{{ stats.sessions }}</div><div class="lbl">Sesi</div></div>
+  </div>
+
+  <div class="ss-grid">
+    <!-- Pomodoro -->
+    <div class="card ss-card">
+      <h3>⏱ Pomodoro</h3>
+      <div class="pomo-modes">
+        <button class="pomo-mode active" data-min="25">Fokus 25</button>
+        <button class="pomo-mode" data-min="5">Rehat 5</button>
+        <button class="pomo-mode" data-min="15">Rehat Panjang 15</button>
+        <button class="pomo-mode" data-min="0">Custom</button>
+      </div>
+      <div class="pomo-display" id="pomoTime">25:00</div>
+      <div class="pomo-label" id="pomoLabel">FOKUS</div>
+      <div class="pomo-controls">
+        <button class="pomo-btn primary" id="pomoStart">Mula</button>
+        <button class="pomo-btn" id="pomoPause">Jeda</button>
+        <button class="pomo-btn" id="pomoReset">Set Semula</button>
+        <button class="pomo-btn" id="focusBtn">Mod Fokus</button>
+      </div>
+      <div class="sess-count" id="sessCount">Sesi selesai: 0</div>
+    </div>
+
+    <!-- Ambient + Music -->
+    <div class="card ss-card">
+      <h3>🎧 Bunyi Persekitaran</h3>
+      <div class="ss-ambient">
+        <button class="ss-amb" data-amb="rain">Hujan</button>
+        <button class="ss-amb" data-amb="forest">Hutan</button>
+        <button class="ss-amb" data-amb="ocean">Lautan</button>
+        <button class="ss-amb" data-amb="wind">Angin</button>
+        <button class="ss-amb" data-amb="fire">Api</button>
+      </div>
+      <h3 style="margin-top:14px">🎵 Muzik Saya</h3>
+      <div id="trackList">
+        {% for t in tracks %}
+        <div class="track" data-src="/study-space/track/{{ t.filename }}">
+          <div><div class="tname">{{ t.title }}</div><div class="tartist">{{ t.artist or '—' }}</div></div>
+          <button class="play">▶</button>
+        </div>
+        {% else %}
+        <p style="color:var(--muted);font-size:0.8rem">Tiada lagu. Muat naik lagu anda di bawah.</p>
+        {% endfor %}
+      </div>
+      <div class="upload-row">
+        <input type="file" id="trackFile" accept="audio/*">
+        <button class="pomo-btn primary" id="uploadBtn">Muat Naik</button>
+      </div>
+      <p style="color:var(--muted);font-size:0.72rem;margin-top:6px">Audio disimpan sebagai fail anda sendiri. Tiada muzik hak cipta dibekalkan.</p>
+    </div>
+
+    <!-- AI study assistant -->
+    <div class="card ss-card" style="grid-column:1/-1">
+      <h3>🤖 Pembantu Belajar AI</h3>
+      <div class="ss-ai">
+        <textarea id="aiQ" placeholder="Tanya apa-apa tentang pelajaran anda... (contoh: terangkan fotosintesis dalam Bahasa Melayu)"></textarea>
+        <div class="pomo-controls" style="justify-content:flex-start">
+          <button class="pomo-btn primary" id="aiAsk">Tanya</button>
+        </div>
+        <div class="ss-ai-answer" id="aiAnswer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var totalSeconds = 25 * 60;
+  var remaining = totalSeconds;
+  var timerId = null;
+  var running = false;
+  var modeMin = 25;
+  var sessionsDone = 0;
+  var sessionId = null;
+  var currentTrack = null;
+  var audioCtx = null;
+  var ambientNodes = {};
+  var activeAmbient = null;
+
+  function $(id){ return document.getElementById(id); }
+  function fmt(s){ var m=Math.floor(s/60); var ss=s%60; return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss; }
+  function render(){ $('pomoTime').textContent = fmt(remaining); }
+
+  function startTimer(){
+    if (running) return;
+    running = true;
+    if (!sessionId) {
+      fetch('/study-space/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({focus_minutes: modeMin}) })
+        .then(function(r){ return r.json(); }).then(function(j){ sessionId = j.id; });
+    }
+    timerId = setInterval(function(){
+      if (remaining > 0) { remaining--; render(); }
+      else {
+        clearInterval(timerId); running = false;
+        sessionsDone++; $('sessCount').textContent = 'Sesi selesai: ' + sessionsDone;
+        if (sessionId) {
+          fetch('/study-space/session/complete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: sessionId}) });
+          sessionId = null;
+        }
+        render();
+      }
+    }, 1000);
+  }
+  function pauseTimer(){ clearInterval(timerId); running = false; }
+  function resetTimer(){ pauseTimer(); remaining = modeMin * 60; render(); }
+
+  $('pomoStart').onclick = startTimer;
+  $('pomoPause').onclick = pauseTimer;
+  $('pomoReset').onclick = resetTimer;
+  document.querySelectorAll('.pomo-mode').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('.pomo-mode').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      modeMin = parseInt(b.getAttribute('data-min'));
+      if (modeMin === 0) { var c = prompt('Minit fokus?', '25'); modeMin = parseInt(c)||25; b.setAttribute('data-min', modeMin); }
+      $('pomoLabel').textContent = modeMin >= 20 ? 'FOKUS' : (modeMin >= 10 ? 'REHAT PANJANG' : 'REHAT');
+      resetTimer();
+    };
+  });
+
+  // Focus mode
+  $('focusBtn').onclick = function(){
+    document.body.classList.toggle('ss-focus');
+    $('focusBtn').textContent = document.body.classList.contains('ss-focus') ? 'Keluar Mod Fokus' : 'Mod Fokus';
+  };
+
+  // Ambient sounds (Web Audio API, synthesized — no files)
+  function getCtx(){ if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+  function stopAmbient(){ Object.values(ambientNodes).forEach(function(n){ try{ n.stop(); }catch(e){} }); ambientNodes = {}; activeAmbient = null; }
+  function startAmbient(kind){
+    stopAmbient();
+    var ctx = getCtx();
+    var gain = ctx.createGain(); gain.gain.value = 0.15; gain.connect(ctx.destination);
+    var src;
+    if (kind === 'rain' || kind === 'ocean' || kind === 'wind' || kind === 'fire') {
+      var len = ctx.sampleRate * 2;
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i=0;i<len;i++){ d[i] = Math.random()*2-1; }
+      src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      var filter = ctx.createBiquadFilter();
+      if (kind === 'rain') { filter.type='highpass'; filter.frequency.value=800; }
+      else if (kind === 'ocean') { filter.type='lowpass'; filter.frequency.value=500; }
+      else if (kind === 'wind') { filter.type='bandpass'; filter.frequency.value=300; }
+      else { filter.type='lowpass'; filter.frequency.value=1200; }
+      src.connect(filter); filter.connect(gain);
+      src.start();
+      ambientNodes[kind] = src;
+    } else if (kind === 'forest') {
+      // gentle periodic chirps via oscillator
+      var osc = ctx.createOscillator(); osc.type='sine'; osc.frequency.value=880;
+      var g2 = ctx.createGain(); g2.gain.value=0;
+      osc.connect(g2); g2.connect(gain); osc.start();
+      var on=false;
+      setInterval(function(){ on=!on; g2.gain.setTargetAtTime(on?0.1:0, ctx.currentTime, 0.1); }, 1200);
+      ambientNodes[kind] = osc;
+    }
+    activeAmbient = kind;
+    document.querySelectorAll('.ss-amb').forEach(function(a){ a.classList.toggle('on', a.getAttribute('data-amb')===kind); });
+  }
+  document.querySelectorAll('.ss-amb').forEach(function(a){
+    a.onclick = function(){ var k = a.getAttribute('data-amb'); if (activeAmbient === k) stopAmbient(); else startAmbient(k); };
+  });
+
+  // Music player (user tracks)
+  $('uploadBtn').onclick = function(){
+    var f = $('trackFile').files[0]; if (!f) return;
+    var fd = new FormData(); fd.append('file', f);
+    fetch('/study-space/upload', { method:'POST', body: fd }).then(function(r){ return r.json(); })
+      .then(function(j){ if (j.ok) location.reload(); });
+  };
+  document.querySelectorAll('#trackList .track').forEach(function(t){
+    t.querySelector('.play').onclick = function(){
+      if (currentTrack) { currentTrack.pause(); }
+      currentTrack = new Audio(t.getAttribute('data-src'));
+      currentTrack.play();
+    };
+  });
+
+  // AI assistant
+  $('aiAsk').onclick = function(){
+    var q = $('aiQ').value.trim(); if (!q) return;
+    var box = $('aiAnswer'); box.style.display = 'block'; box.textContent = 'Berfikir...';
+    fetch('/study-space/assistant', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question:q}) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ box.textContent = j.answer || j.error || 'Ralat.'; })
+      .catch(function(){ box.textContent = 'Ralat rangkaian.'; });
+  };
+
+  render();
+})();
+</script>
+{% endblock %}
