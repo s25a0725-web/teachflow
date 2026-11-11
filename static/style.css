@@ -15,15 +15,11 @@
   --bg-2: #101a36;
 
   /* Premium multicolour palette (neural network) */
-  --nn-midnight: #10172E;
-  --nn-royal:    #7952B8;
-  --nn-sapphire: #4269A8;
-  --nn-emerald:  #347D70;
-  --nn-gold:     #C5A46D;
-  --nn-teal:     #286C78;
-  --nn-rose:     #B87891;
-  --nn-lavender: #A99ACB;
-  --nn-platinum: #B8C2D1;
+  --nn-midnight: #0a0c18;
+  --nn-purple:   #873BFF;
+  --nn-blue:     #167BFF;
+  --nn-orange:   #FF8A24;
+  --nn-red:      #F04452;
 
   --surface: rgba(255, 255, 255, 0.05);
   --surface-2: rgba(255, 255, 255, 0.08);

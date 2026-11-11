@@ -28,16 +28,19 @@
   };
   var cfg = CFG[page] || CFG.dashboard;
 
-  // ---- Colour palette --------------------------------------------------------
+  // ---- Colour palette (exclusive TeachFlow 2.0 neural identity) ---------------
+  // Purple + blue dominate the structures; orange + red accent selected nodes,
+  // pathways and energy particles. No green/yellow/pink/cyan.
+  var COLORS = {
+    purple: new THREE.Color("#873BFF"),
+    blue:   new THREE.Color("#167BFF"),
+    orange: new THREE.Color("#FF8A24"),
+    red:    new THREE.Color("#F04452"),
+  };
   var PALETTE = [
-    new THREE.Color("#7952B8"), // royal purple
-    new THREE.Color("#4269A8"), // sapphire blue
-    new THREE.Color("#347D70"), // emerald
-    new THREE.Color("#C5A46D"), // champagne gold
-    new THREE.Color("#286C78"), // deep teal
-    new THREE.Color("#B87891"), // dusty rose
-    new THREE.Color("#A99ACB"), // lavender
-    new THREE.Color("#B8C2D1"), // platinum
+    COLORS.purple, COLORS.purple, COLORS.purple, COLORS.purple,
+    COLORS.blue,   COLORS.blue,   COLORS.blue,   COLORS.blue,
+    COLORS.orange, COLORS.red,
   ];
   function pick() { return PALETTE[(Math.random() * PALETTE.length) | 0]; }
 
@@ -54,7 +57,7 @@
   host.appendChild(renderer.domElement);
 
   var scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x10172e, 0.0009);
+  scene.fog = new THREE.FogExp2(0x0a0c18, 0.0009);
 
   var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
   camera.position.z = 260;
@@ -96,7 +99,7 @@
       var d = nodes[a].position.distanceTo(nodes[b].position);
       if (d > linkDist) continue;
       var geo2 = new THREE.BufferGeometry().setFromPoints([nodes[a].position, nodes[b].position]);
-      var mat2 = new THREE.LineBasicMaterial({ color: 0x7952b8, transparent: true, opacity: 0.18 });
+      var mat2 = new THREE.LineBasicMaterial({ color: 0x167bff, transparent: true, opacity: 0.16 });
       var ln = new THREE.Line(geo2, mat2);
       lineGroup.add(ln);
       lines.push({ line: ln, a: a, b: b });
@@ -122,7 +125,7 @@
     var ggeo = new THREE.SphereGeometry(9 + Math.random() * 22, 20, 20);
     var gmat = new THREE.MeshPhongMaterial({
       color: pick(), transparent: true, opacity: 0.08,
-      shininess: 60, specular: new THREE.Color("#B8C2D1"),
+      shininess: 60, specular: new THREE.Color("#ffffff"),
     });
     var gm = new THREE.Mesh(ggeo, gmat);
     gm.position.set((Math.random() - 0.5) * BOUNDS.x * 1.3, (Math.random() - 0.5) * BOUNDS.y * 1.1, -40 - Math.random() * 260);
@@ -142,18 +145,19 @@
   }
   var pGeo = new THREE.BufferGeometry();
   pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
-  var pMat = new THREE.PointsMaterial({ color: 0xA99ACB, size: 1.3, transparent: true, opacity: 0.5, sizeAttenuation: true });
+  var pMat = new THREE.PointsMaterial({ color: 0x167bff, size: 1.3, transparent: true, opacity: 0.5, sizeAttenuation: true });
   var points = new THREE.Points(pGeo, pMat);
   scene.add(points);
 
   // ---- Lighting --------------------------------------------------------------
-  var amb = new THREE.AmbientLight(0x334155, 1.4);
-  var dir = new THREE.DirectionalLight(0xB8C2D1, 0.7);
+  var amb = new THREE.AmbientLight(0x1a1a2e, 1.4);
+  var dir = new THREE.DirectionalLight(0xffffff, 0.6);
   dir.position.set(1, 1, 1);
   scene.add(amb, dir);
-  var pink = new THREE.PointLight(0xB87891, 0.9, 900); pink.position.set(300, 150, 200); scene.add(pink);
-  var teal = new THREE.PointLight(0x286C78, 0.9, 900); teal.position.set(-320, -140, 180); scene.add(teal);
-  var gold = new THREE.PointLight(0xC5A46D, 0.7, 900); gold.position.set(0, 260, -80); scene.add(gold);
+  var purpleL = new THREE.PointLight(0x873bff, 1.0, 900); purpleL.position.set(300, 150, 200); scene.add(purpleL);
+  var blueL = new THREE.PointLight(0x167bff, 0.9, 900); blueL.position.set(-320, -140, 180); scene.add(blueL);
+  var orangeL = new THREE.PointLight(0xff8a24, 0.6, 900); orangeL.position.set(0, 260, -80); scene.add(orangeL);
+  var redL = new THREE.PointLight(0xf04452, 0.5, 900); redL.position.set(180, -220, -120); scene.add(redL);
 
   // ---- Mouse parallax --------------------------------------------------------
   var mouse = { x: 0, y: 0, tx: 0, ty: 0 };
