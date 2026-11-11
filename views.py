@@ -165,6 +165,13 @@ def notifications_read():
     return redirect(url_for("views.dashboard"))
 
 
+@bp.route("/document-ai")
+@login_required
+def document_ai():
+    """Hub page listing all AI document generators."""
+    return render_template("document_ai.html")
+
+
 # --------------------------------------------------------------------------
 # Lesson plans
 # --------------------------------------------------------------------------

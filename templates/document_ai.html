@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Document AI · {{ brand_name }}{% endblock %}
+{% block head %}
+<style>
+.dai-wrap { max-width: 1080px; margin: 0 auto; }
+.dai-hero { text-align: center; padding: 18px 0 4px; }
+.dai-hero h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }
+.dai-hero h1 span { background: linear-gradient(135deg, #873BFF, #167BFF); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.dai-hero p { margin: 6px 0 0; color: var(--muted); font-size: 0.88rem; }
+.dai-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-top: 22px; }
+.dai-card { padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; transition: transform .15s ease, border-color .15s ease; }
+.dai-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+.dai-ico { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+.dai-ico.p { background: rgba(135,59,255,.18); color: #b58aff; }
+.dai-ico.b { background: rgba(22,123,255,.18); color: #7db8ff; }
+.dai-ico.o { background: rgba(255,138,36,.18); color: #ffb86b; }
+.dai-ico.r { background: rgba(240,68,82,.18); color: #ff8f98; }
+.dai-card h3 { margin: 0; font-size: 0.95rem; color: #fff; }
+.dai-card p { margin: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.45; flex: 1; }
+.dai-cta { font-size: 0.78rem; font-weight: 700; color: #7db8ff; }
+.dai-count { font-size: 0.72rem; color: var(--muted); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 12px; align-self: flex-start; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dai-wrap">
+  <div class="dai-hero">
+    <h1><span>DOCUMENT AI</span></h1>
+    <p>Semua penjana dokumen sekolah dalam satu tempat. Pilih alat untuk mula.</p>
+  </div>
+
+  <div class="dai-grid">
+    <a class="card dai-card" href="{{ url_for('rph.index') }}">
+      <div class="dai-ico p">📘</div>
+      <h3>RPH Generator</h3>
+      <p>Rancangan Pengajaran Harian lengkap — SK/SP, objektif, aktiviti, BBM, PAK21, PBD. Eksport PDF &amp; Word.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('minit.index') }}">
+      <div class="dai-ico p">📝</div>
+      <h3>Minit Curai</h3>
+      <p>Minit mesyuarat / taklimat gaya KPM — isu bernombor, tindakan susulan, foto, tandatangan.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('ict_booking.index') }}">
+      <div class="dai-ico b">💻</div>
+      <h3>Rekod Penempahan Bilik ICT</h3>
+      <p>Tempah bilik ICT dengan pengesanan konflik. Autofill tarikh, hari, masa, tujuan.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('koko.index') }}">
+      <div class="dai-ico b">🏆</div>
+      <h3>Laporan Kokurikulum</h3>
+      <p>Laporan bergambar aktiviti kokurikulum — objektif, penilaian, analisis, galeri foto.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('duty.index') }}">
+      <div class="dai-ico o">🛡️</div>
+      <h3>Laporan Harian Guru Bertugas</h3>
+      <p>Laporan tugas harian — kehadiran, kemudahan sekolah, aktiviti khas, ulasan.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('assembly.index') }}">
+      <div class="dai-ico o">🎤</div>
+      <h3>Laporan Perhimpunan</h3>
+      <p>Laporan perhimpunan sekolah — agenda, ucapan, pengumuman, persembahan murid.</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+
+    <a class="card dai-card" href="{{ url_for('loan.index') }}">
+      <div class="dai-ico r">🔌</div>
+      <h3>Rekod Pinjaman Perkakasan ICT</h3>
+      <p>Pinjaman peralatan ICT dengan inventori. Bahagian A (pinjam) &amp; B (pulang).</p>
+      <span class="dai-cta">Buka Alat →</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
